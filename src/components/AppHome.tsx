@@ -30,6 +30,11 @@ const HOME_SECTIONS = [
     title: "Chat Shell",
     description: "Use the Smart Coach prompt sandbox.",
     href: "/chat"
+  },
+  {
+    title: "Meal Logging",
+    description: "Record meals and enforce sensitivities.",
+    href: "/log"
   }
 ] as const;
 
