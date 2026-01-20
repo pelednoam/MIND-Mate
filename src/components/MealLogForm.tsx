@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createMealLogEntry, type MealType } from "../lib/mealLogging";
 import { HEALTHY_CATEGORIES } from "../lib/mindScore";
 import { WARNING_REPAIR_ENGINE, type LimitFood } from "../lib/mindRules";
+import {
+  appendMealLog,
+  initializeMealLogs,
+  loadMealLogs
+} from "../lib/mealLogStorage";
 
 type MealDraft = {
   mealType: MealType;
@@ -13,6 +18,13 @@ type MealDraft = {
   containsLactose: boolean;
   healthyCategories: string[];
   limitFoods: LimitFood[];
+};
+
+type MealLogView = {
+  id: string;
+  label: string;
+  mealType: MealType;
+  date: string;
 };
 
 const INITIAL_DRAFT: MealDraft = {
@@ -29,6 +41,28 @@ export function MealLogForm() {
   const [draft, setDraft] = useState<MealDraft>(INITIAL_DRAFT);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [logs, setLogs] = useState<MealLogView[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = loadMealLogs(window.localStorage);
+      const view = stored.map((entry) => ({
+        id: entry.id,
+        label: entry.label,
+        mealType: entry.mealType,
+        date: entry.date
+      }));
+      setLogs(view);
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : "Unable to load meal logs";
+      if (message.includes("Missing meal logs")) {
+        setStatus("No meal logs yet.");
+        return;
+      }
+      setError(message);
+    }
+  }, []);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,10 +81,46 @@ export function MealLogForm() {
         containsLactose: draft.containsLactose
       });
 
+      let updated = appendMealLog(window.localStorage, entry);
+      if (updated.length === 0) {
+        throw new Error("Meal log did not persist");
+      }
+      const updatedLogs = updated.map((item) => ({
+        id: item.id,
+        label: item.label,
+        mealType: item.mealType,
+        date: item.date
+      }));
+      setLogs(updatedLogs);
       setStatus(`Logged ${entry.mealType}: ${entry.label}`);
       setDraft(INITIAL_DRAFT);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unexpected error");
+      const message =
+        caught instanceof Error ? caught.message : "Unexpected error";
+      if (message.includes("Missing meal logs")) {
+        try {
+          initializeMealLogs(window.localStorage);
+          const updated = appendMealLog(window.localStorage, entry);
+          const updatedLogs = updated.map((item) => ({
+            id: item.id,
+            label: item.label,
+            mealType: item.mealType,
+            date: item.date
+          }));
+          setLogs(updatedLogs);
+          setStatus(`Logged ${entry.mealType}: ${entry.label}`);
+          setDraft(INITIAL_DRAFT);
+          return;
+        } catch (innerError) {
+          const innerMessage =
+            innerError instanceof Error
+              ? innerError.message
+              : "Unable to initialize meal logs";
+          setError(innerMessage);
+          return;
+        }
+      }
+      setError(message);
     }
   };
 
@@ -200,6 +270,25 @@ export function MealLogForm() {
 
       {status ? <p className="mt-4 text-sm text-emerald-600">{status}</p> : null}
       {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
+
+      {logs.length > 0 ? (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="text-xs font-semibold uppercase text-slate-500">
+            Recent logs
+          </p>
+          <ul className="mt-3 space-y-2">
+            {logs.map((entry) => (
+              <li key={entry.id} className="rounded-lg bg-white px-3 py-2">
+                <span className="text-xs uppercase text-slate-500">
+                  {entry.mealType}
+                </span>
+                <p className="text-sm text-slate-800">{entry.label}</p>
+                <p className="text-xs text-slate-500">{entry.date}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
