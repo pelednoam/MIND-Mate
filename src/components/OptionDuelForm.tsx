@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { evaluateLunchOptions, type LunchOption } from "../lib/optionDuel";
 import { HEALTHY_CATEGORIES, type HealthyCategoryId } from "../lib/mindScore";
 import { WARNING_REPAIR_ENGINE, type LimitFood } from "../lib/mindRules";
 import type { OptionDuelDecision } from "../lib/optionDuel";
 import { applyMealSelection } from "../lib/weeklyLogUpdater";
 import { loadWeeklyLog, saveWeeklyLog } from "../lib/weeklyScoreStorage";
+import { getLimitServingsFromWeeklyLog } from "../lib/weeklyLogReader";
 
 type OptionInput = {
   id: string;
@@ -57,6 +58,23 @@ export function OptionDuelForm() {
   const [evaluatedOptions, setEvaluatedOptions] = useState<LunchOption[]>([]);
   const [applyStatus, setApplyStatus] = useState("");
   const [applyError, setApplyError] = useState("");
+  const [limitStatus, setLimitStatus] = useState("");
+  const [limitError, setLimitError] = useState("");
+
+  useEffect(() => {
+    try {
+      const log = loadWeeklyLog(window.localStorage);
+      const limits = getLimitServingsFromWeeklyLog(log);
+      setCurrentLimitServings(limits);
+      setLimitStatus("Loaded current limits from weekly log.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load weekly log limits";
+      setLimitError(message);
+    }
+  }, []);
 
   const handleOptionLabelChange = (index: number, value: string) => {
     setOptions((prev) => {
@@ -289,6 +307,12 @@ export function OptionDuelForm() {
           <p className="text-xs font-semibold uppercase text-slate-500">
             Current weekly limit servings
           </p>
+          {limitStatus ? (
+            <p className="mt-2 text-xs text-emerald-600">{limitStatus}</p>
+          ) : null}
+          {limitError ? (
+            <p className="mt-2 text-xs text-rose-600">{limitError}</p>
+          ) : null}
           <div className="mt-2 grid gap-4 sm:grid-cols-2">
             <label className="text-sm text-slate-600">
               Red meat
