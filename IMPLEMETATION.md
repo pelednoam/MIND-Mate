@@ -120,6 +120,16 @@ It is updated after each new module addition.
 ### `src/lib/persistence/chatRepository.ts`
 - `fetchChatHistory` / `upsertChatHistory` for chat messages.
 
+### `src/lib/persistence/mealLogRepository.ts`
+- `fetchMealLogs` / `upsertMealLogs` for meal logs.
+
+### `src/lib/persistence/espressoRepository.ts`
+- `fetchEspressoState` / `upsertEspressoState` for espresso tracker.
+
+### `src/lib/persistence/supabaseSync.ts`
+- Sync helpers that pull/push setup, weekly log, meal logs, espresso, and chat
+  between Supabase and local storage.
+
 All repositories are tested with fake Supabase clients.
 
 ---
