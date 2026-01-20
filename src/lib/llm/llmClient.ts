@@ -1,11 +1,13 @@
-import { openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { loadLlmConfig } from "./llmConfig";
 
 export function getCoachModel() {
   const config = loadLlmConfig();
   if (config.provider === "openai") {
-    return openai(config.model);
+    const provider = createOpenAI({ apiKey: config.apiKey });
+    return provider(config.model);
   }
-  return google(config.model);
+  const provider = createGoogleGenerativeAI({ apiKey: config.apiKey });
+  return provider(config.model);
 }

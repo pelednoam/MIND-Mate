@@ -4,20 +4,20 @@ export type SupabaseConfig = {
 };
 
 export type SupabaseEnv = {
-  SUPABASE_URL?: string;
-  SUPABASE_ANON_KEY?: string;
+  NEXT_PUBLIC_SUPABASE_URL?: string;
+  NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
 };
 
 export function buildSupabaseConfig(env: SupabaseEnv): SupabaseConfig {
-  if (!env.SUPABASE_URL || env.SUPABASE_URL.trim().length === 0) {
-    throw new Error("SUPABASE_URL is required");
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL.trim().length === 0) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL is required");
   }
-  if (!env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY.trim().length === 0) {
-    throw new Error("SUPABASE_ANON_KEY is required");
+  if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY.trim().length === 0) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is required");
   }
 
   return {
-    url: env.SUPABASE_URL,
-    anonKey: env.SUPABASE_ANON_KEY
+    url: env.NEXT_PUBLIC_SUPABASE_URL,
+    anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   };
 }

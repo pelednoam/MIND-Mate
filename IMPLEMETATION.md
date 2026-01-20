@@ -2,7 +2,7 @@
 
 This document summarizes the modules implemented so far, with short notes on how
 each module is implemented and what it does. It is updated after each new module
-addition.
+addition. Runtime configuration now lives in `config/mindmate.yaml`.
 
 ---
 
@@ -119,8 +119,8 @@ addition.
 ## 3. Supabase Persistence (Data Access Layer)
 
 ### `src/lib/persistence/supabaseConfig.ts`
-- Builds Supabase config from env (`SUPABASE_URL`, `SUPABASE_ANON_KEY`).
-- Throws if any required env variables are missing.
+- Builds Supabase config from `NEXT_PUBLIC_SUPABASE_*` values.
+- These values are loaded from `config/mindmate.yaml` via `next.config.js`.
 
 ### `src/lib/persistence/supabaseClient.ts`
 - Creates a singleton Supabase client using the env config.
@@ -169,9 +169,8 @@ addition.
 ## 4. LLM Integration
 
 ### `src/lib/llm/llmConfig.ts`
-- Centralizes LLM provider configuration and enforces required env vars.
-- Requires `LLM_PROVIDER`, `LLM_MODEL`, and the provider API key to avoid silent
-  fallbacks.
+- Centralizes LLM provider configuration sourced from `config/mindmate.yaml`.
+- Validates provider/model compatibility and required API key presence.
 
 ### `src/lib/llm/llmClient.ts`
 - Builds the Vercel AI SDK model instance based on the configured provider.
@@ -182,7 +181,7 @@ addition.
 ## 5. Notifications (FCM + Cron)
 
 ### `src/lib/notifications/fcmConfig.ts`
-- Loads the Firebase service account JSON and validates required fields.
+- Reads Firebase credentials from `config/mindmate.yaml`.
 - Normalizes the private key for Firebase Admin authentication.
 
 ### `src/lib/notifications/fcmClient.ts`
@@ -199,6 +198,9 @@ addition.
 
 ### `vercel.json`
 - Configures cron schedules that hit the nudge endpoints at the defined times.
+
+### `config/mindmate.yaml`
+- Single source of truth for Supabase, LLM, and FCM configuration.
 
 ---
 

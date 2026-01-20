@@ -4,8 +4,8 @@ import { buildSupabaseConfig } from "../src/lib/persistence/supabaseConfig";
 describe("supabaseConfig", () => {
   it("builds config when env is present", () => {
     const config = buildSupabaseConfig({
-      SUPABASE_URL: "https://example.supabase.co",
-      SUPABASE_ANON_KEY: "anon-key"
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key"
     });
 
     expect(config.url).toContain("supabase.co");
@@ -13,9 +13,11 @@ describe("supabaseConfig", () => {
   });
 
   it("throws when env vars are missing", () => {
-    expect(() => buildSupabaseConfig({})).toThrow("SUPABASE_URL");
+    expect(() => buildSupabaseConfig({})).toThrow("NEXT_PUBLIC_SUPABASE_URL");
     expect(() =>
-      buildSupabaseConfig({ SUPABASE_URL: "https://example.supabase.co" })
-    ).toThrow("SUPABASE_ANON_KEY");
+      buildSupabaseConfig({
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+      })
+    ).toThrow("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   });
 });

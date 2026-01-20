@@ -1,39 +1,67 @@
-import { describe, expect, it, afterEach } from "vitest";
-import { loadLlmConfig } from "../src/lib/llm/llmConfig";
+import { describe, expect, it } from "vitest";
+import { buildLlmConfig } from "../src/lib/llm/llmConfig";
+import type { AppConfig } from "../src/lib/config/appConfig";
 
-const envSnapshot = { ...process.env };
+const baseConfig: AppConfig = {
+  supabase: {
+    url: "https://example.supabase.co",
+    anonKey: "anon-key"
+  },
+  llm: {
+    provider: "openai",
+    model: "gpt-4o",
+    apiKey: "test-key"
+  },
+  fcm: {
+    projectId: "project",
+    clientEmail: "client@example.com",
+    privateKey: "line1\\nline2"
+  }
+};
 
-afterEach(() => {
-  process.env = { ...envSnapshot };
-});
-
-describe("loadLlmConfig", () => {
-  it("throws when LLM_PROVIDER is missing", () => {
-    delete process.env.LLM_PROVIDER;
-    expect(() => loadLlmConfig()).toThrow("LLM_PROVIDER");
+describe("llmConfig", () => {
+  it("throws when api key is missing", () => {
+    const config = {
+      ...baseConfig,
+      llm: {
+        ...baseConfig.llm,
+        provider: "openai" as "openai" | "gemini"
+      }
+    };
+    config.llm.provider = "openai";
+    config.llm.model = "gpt-4o";
+    config.llm.apiKey = "";
+    expect(() => buildLlmConfig(config)).toThrow("llm.apiKey");
   });
 
-  it("throws when LLM_MODEL is missing", () => {
-    process.env.LLM_PROVIDER = "openai";
-    delete process.env.LLM_MODEL;
-    process.env.OPENAI_API_KEY = "test-key";
-    expect(() => loadLlmConfig()).toThrow("LLM_MODEL");
+  it("throws when model is invalid for provider", () => {
+    const config = {
+      ...baseConfig,
+      llm: {
+        ...baseConfig.llm,
+        model: "" as "gpt-4o" | "gemini-1.5-pro"
+      }
+    };
+    expect(() => buildLlmConfig(config)).toThrow("gpt-4o");
   });
 
-  it("returns openai config when env is valid", () => {
-    process.env.LLM_PROVIDER = "openai";
-    process.env.LLM_MODEL = "gpt-4o";
-    process.env.OPENAI_API_KEY = "test-key";
-    expect(loadLlmConfig()).toEqual({
+  it("returns openai config when values are valid", () => {
+    expect(buildLlmConfig(baseConfig)).toEqual({
       provider: "openai",
-      model: "gpt-4o"
+      model: "gpt-4o",
+      apiKey: "test-key"
     });
   });
 
   it("rejects gemini when model does not match", () => {
-    process.env.LLM_PROVIDER = "gemini";
-    process.env.LLM_MODEL = "gpt-4o";
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY = "test-key";
-    expect(() => loadLlmConfig()).toThrow("gemini-1.5-pro");
+    const config = {
+      ...baseConfig,
+      llm: {
+        provider: "gemini",
+        model: "gpt-4o" as "gpt-4o" | "gemini-1.5-pro",
+        apiKey: "test-key"
+      }
+    };
+    expect(() => buildLlmConfig(config)).toThrow("gemini-1.5-pro");
   });
 });

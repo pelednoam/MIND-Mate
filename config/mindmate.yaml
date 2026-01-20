@@ -1,0 +1,13 @@
+supabase:
+  url: "https://example.supabase.co"
+  anonKey: "public-anon-key"
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  apiKey: "replace-with-llm-key"
+fcm:
+  projectId: "replace-with-project-id"
+  clientEmail: "replace-with-client-email"
+  privateKey: |
+    line1
+    line2

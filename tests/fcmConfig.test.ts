@@ -1,38 +1,38 @@
-import { describe, expect, it, afterEach } from "vitest";
-import { loadFcmConfig } from "../src/lib/notifications/fcmConfig";
+import { describe, expect, it } from "vitest";
+import { buildFcmConfig } from "../src/lib/notifications/fcmConfig";
+import type { AppConfig } from "../src/lib/config/appConfig";
 
-const envSnapshot = { ...process.env };
+const baseConfig: AppConfig = {
+  supabase: {
+    url: "https://example.supabase.co",
+    anonKey: "anon-key"
+  },
+  llm: {
+    provider: "openai",
+    model: "gpt-4o",
+    apiKey: "test-key"
+  },
+  fcm: {
+    projectId: "project",
+    clientEmail: "client@example.com",
+    privateKey: "line1\\nline2"
+  }
+};
 
-afterEach(() => {
-  process.env = { ...envSnapshot };
-});
-
-describe("loadFcmConfig", () => {
-  it("throws when env is missing", () => {
-    delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    expect(() => loadFcmConfig()).toThrow("FIREBASE_SERVICE_ACCOUNT_JSON");
-  });
-
-  it("throws when JSON is invalid", () => {
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = "{bad json}";
-    expect(() => loadFcmConfig()).toThrow("valid JSON");
-  });
-
-  it("throws when required fields are missing", () => {
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = JSON.stringify({
-      project_id: "project",
-      client_email: "client@example.com"
-    });
-    expect(() => loadFcmConfig()).toThrow("private_key");
+describe("fcmConfig", () => {
+  it("throws when private key is invalid", () => {
+    const config = {
+      ...baseConfig,
+      fcm: {
+        ...baseConfig.fcm,
+        privateKey: "   "
+      }
+    };
+    expect(() => buildFcmConfig(config)).toThrow("Firebase private_key");
   });
 
   it("returns config with normalized private key", () => {
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = JSON.stringify({
-      project_id: "project",
-      client_email: "client@example.com",
-      private_key: "line1\\\\nline2"
-    });
-    const config = loadFcmConfig();
+    const config = buildFcmConfig(baseConfig);
     expect(config.privateKey).toBe("line1\nline2");
   });
 });
