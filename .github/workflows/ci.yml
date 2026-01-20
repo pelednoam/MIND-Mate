@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write CI config
+        run: |
+          cat > config/mindmate.yaml <<'EOF'
+          supabase:
+            url: "https://ci.supabase.co"
+            anonKey: "ci-anon-key"
+          llm:
+            provider: "openai"
+            model: "gpt-4o"
+            apiKey: "ci-llm-key"
+          fcm:
+            projectId: "ci-project"
+            clientEmail: "ci@example.com"
+            privateKey: |
+              -----BEGIN PRIVATE KEY-----
+              CIKEY
+              -----END PRIVATE KEY-----
+            web:
+              apiKey: "ci-web-key"
+              authDomain: "ci.firebaseapp.com"
+              projectId: "ci-web-project"
+              appId: "ci-app-id"
+              messagingSenderId: "ci-sender"
+              vapidKey: "ci-vapid"
+          EOF
+
+      - name: Validate config
+        run: npm run validate:config
+
+      - name: Run tests
+        run: npm test
