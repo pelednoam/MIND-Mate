@@ -5,10 +5,10 @@ import {
   CoachPersonality,
   RoutineAnchors,
   Sensitivities,
-  buildCoachContext,
-  type CoachContextPayload
+  buildCoachContext
 } from "../lib/coachContext";
 import { buildCoachPrompt, type CoachPrompt } from "../lib/coachPrompt";
+import { generateCoachResponse } from "../lib/coachResponder";
 import { DEFAULT_COACH_PERSONALITY } from "../lib/mindRules";
 import { loadSetupState } from "../lib/setupStorage";
 import { loadWeeklyLog } from "../lib/weeklyScoreStorage";
@@ -23,8 +23,9 @@ export function SmartCoachChat() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [promptPreview, setPromptPreview] = useState<CoachPrompt | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -53,15 +54,41 @@ export function SmartCoachChat() {
 
     const prompt = buildCoachPrompt(context, draft);
     setPromptPreview(prompt);
+    setIsSending(true);
 
-    const nextMessages: ChatMessage[] = [
-      ...messages,
-      { role: "user", text: draft },
-      { role: "coach", text: buildCoachReply(draft, context) }
-    ];
+    try {
+      const response = await fetch("/api/coach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prompt })
+      });
 
-    setMessages(nextMessages);
-    setDraft("");
+      if (!response.ok) {
+        throw new Error("Coach API request failed");
+      }
+
+      const data = (await response.json()) as { reply: string };
+      const nextMessages: ChatMessage[] = [
+        ...messages,
+        { role: "user", text: draft },
+        { role: "coach", text: data.reply }
+      ];
+      setMessages(nextMessages);
+      setDraft("");
+    } catch (caught) {
+      const fallback = generateCoachResponse(prompt);
+      const nextMessages: ChatMessage[] = [
+        ...messages,
+        { role: "user", text: draft },
+        { role: "coach", text: fallback }
+      ];
+      setMessages(nextMessages);
+      setError("Coach API unavailable, using local response.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -105,8 +132,9 @@ export function SmartCoachChat() {
         <button
           type="submit"
           className="self-start rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          disabled={isSending}
         >
-          Ask coach
+          {isSending ? "Sending..." : "Ask coach"}
         </button>
       </form>
 
@@ -126,19 +154,3 @@ export function SmartCoachChat() {
   );
 }
 
-function buildCoachReply(
-  input: string,
-  context: CoachContextPayload
-): string {
-  const normalized = input.toLowerCase();
-  if (normalized.includes("beans")) {
-    return `Beans are off-limits. Choose a bean-free option and add nuts or fish later. (noBeans=${context.sensitivities.noBeans})`;
-  }
-  if (normalized.includes("lactose") || normalized.includes("cheese")) {
-    return `Avoid lactose. Pick the option without dairy and keep dinner light. (noLactose=${context.sensitivities.noLactose})`;
-  }
-  if (normalized.includes("fried")) {
-    return "Fried food triggers a warning. If you proceed, plan a repair with extra greens.";
-  }
-  return "Pick the option that adds whole grains, fish, or leafy greens. I can help refine it.";
-}
