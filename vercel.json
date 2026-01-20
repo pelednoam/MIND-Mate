@@ -1,0 +1,8 @@
+{
+  "crons": [
+    { "path": "/api/cron/nudges/morning", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/nudges/pre_lunch", "schedule": "45 11 * * *" },
+    { "path": "/api/cron/nudges/afternoon", "schedule": "0 15 * * *" },
+    { "path": "/api/cron/nudges/evening", "schedule": "0 18 * * *" }
+  ]
+}

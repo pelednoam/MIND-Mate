@@ -129,6 +129,7 @@ addition.
 ### `src/lib/persistence/supabaseTables.ts`
 - Centralized table names for all persistence operations.
 - Prevents drift and reduces typos between repositories.
+- Includes `mind_notification_tokens` for FCM device tokens.
 
 ### `src/lib/persistence/supabaseUserStorage.ts`
 - Stores and loads the Supabase user ID in local storage.
@@ -154,6 +155,10 @@ addition.
 - `fetchChatHistory` / `upsertChatHistory` for chat message arrays.
 - Normalizes message shapes to match the local storage schema.
 
+### `src/lib/persistence/notificationTokenRepository.ts`
+- Registers device tokens in `mind_notification_tokens`.
+- Fetches tokens for a user or for cron delivery.
+
 ### `src/lib/persistence/supabaseSync.ts`
 - Pull/push helpers for setup, weekly log, meal logs, espresso, and chat.
 - Sync helpers copy Supabase records into local storage and push local storage
@@ -174,7 +179,30 @@ addition.
 
 ---
 
-## 5. Supabase Sync UI
+## 5. Notifications (FCM + Cron)
+
+### `src/lib/notifications/fcmConfig.ts`
+- Loads the Firebase service account JSON and validates required fields.
+- Normalizes the private key for Firebase Admin authentication.
+
+### `src/lib/notifications/fcmClient.ts`
+- Creates a singleton Firebase Admin app and exposes Messaging.
+- Throws when the Firebase config is missing or invalid.
+
+### `src/lib/notifications/nudgeComposer.ts`
+- Builds daily nudges from setup, weekly log, and meal logs per user.
+- Bridges proactive nudge logic with persisted data.
+
+### `src/lib/notifications/pushNudges.ts`
+- Sends nudge payloads via FCM to a list of device tokens.
+- Raises errors when delivery fails.
+
+### `vercel.json`
+- Configures cron schedules that hit the nudge endpoints at the defined times.
+
+---
+
+## 6. Supabase Sync UI
 
 ### `src/components/SupabaseSyncPanel.tsx`
 - Manual UI for pulling/pushing all local state to Supabase.
@@ -187,7 +215,7 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 6. API Routes (Server)
+## 7. API Routes (Server)
 
 ### `src/app/api/coach/route.ts`
 - Accepts `{ prompt }` and returns `{ reply }`.
@@ -197,9 +225,17 @@ All repositories are tested with fake Supabase clients.
 - Accepts options + limit servings and returns decision.
 - Calls the core `optionDuel` logic to stay consistent with UI evaluations.
 
+### `src/app/api/notifications/register/route.ts`
+- Registers an FCM device token for a user in Supabase.
+- Expects `{ userId, token }` and returns a success payload.
+
+### `src/app/api/cron/nudges/[time]/route.ts`
+- Cron entry point for scheduled nudges (morning, pre-lunch, afternoon, evening).
+- Pulls user data from Supabase, builds nudges, and sends via FCM.
+
 ---
 
-## 7. UI Components / Screens
+## 8. UI Components / Screens
 
 ### Setup & Home
 - `src/components/SetupScreen.tsx` loads setup from local storage and Supabase.
@@ -261,7 +297,7 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 8. Tests
+## 9. Tests
 
 - All logic modules have Vitest coverage under `tests/`.
 - UI components render tests use `react-dom/server` and check headings/text.
@@ -269,7 +305,7 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 9. Pending Work
+## 10. Pending Work
 
 - Auth/user identity (secure user_id handling instead of manual entry).
-- Background worker + FCM for push notifications.
+- Client-side FCM registration (service worker + token collection UI).
