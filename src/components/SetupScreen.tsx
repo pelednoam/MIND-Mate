@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DAILY_ANCHORS,
   DEFAULT_COACH_PERSONALITY,
@@ -10,13 +10,13 @@ import {
   SENSITIVITY_TOGGLES,
   WARNING_REPAIR_ENGINE
 } from "@/lib/mindRules";
+import {
+  loadSetupState,
+  saveSetupState,
+  type SetupState
+} from "@/lib/setupStorage";
 
-type SetupFormState = {
-  breakfastRoutine: string;
-  dinnerRoutine: string;
-  coachPersonality: string;
-};
-
+type SetupFormState = SetupState;
 const INITIAL_BREAKFAST = DAILY_ANCHORS.breakfast.join(", ");
 const INITIAL_DINNER = DAILY_ANCHORS.dinner.join(", ");
 
@@ -27,6 +27,20 @@ export function SetupScreen() {
     coachPersonality: DEFAULT_COACH_PERSONALITY
   });
   const [statusMessage, setStatusMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    try {
+      const saved = loadSetupState(window.localStorage);
+      setFormState(saved);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to load setup state";
+      setErrorMessage(message);
+    }
+  }, []);
 
   const handleChange =
     (field: keyof SetupFormState) =>
@@ -39,7 +53,16 @@ export function SetupScreen() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatusMessage("Setup saved locally (placeholder).");
+    setErrorMessage("");
+    try {
+      saveSetupState(window.localStorage, formState);
+      setStatusMessage("Setup saved to local storage.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to save setup state";
+      setStatusMessage("");
+      setErrorMessage(message);
+    }
   };
 
   return (
@@ -203,6 +226,9 @@ export function SetupScreen() {
             </button>
             {statusMessage ? (
               <span className="text-sm text-slate-600">{statusMessage}</span>
+            ) : null}
+            {errorMessage ? (
+              <span className="text-sm text-rose-600">{errorMessage}</span>
             ) : null}
           </div>
         </form>
