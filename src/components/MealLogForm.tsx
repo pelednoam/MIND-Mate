@@ -9,6 +9,8 @@ import {
   initializeMealLogs,
   loadMealLogs
 } from "../lib/mealLogStorage";
+import { loadWeeklyLog, saveWeeklyLog } from "../lib/weeklyScoreStorage";
+import { applyMealLogEntry } from "../lib/mealLogUpdater";
 
 type MealDraft = {
   mealType: MealType;
@@ -81,6 +83,10 @@ export function MealLogForm() {
         containsLactose: draft.containsLactose
       });
 
+      const weeklyLog = loadWeeklyLog(window.localStorage);
+      const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
+      saveWeeklyLog(window.localStorage, updatedWeeklyLog);
+
       let updated = appendMealLog(window.localStorage, entry);
       if (updated.length === 0) {
         throw new Error("Meal log did not persist");
@@ -100,6 +106,9 @@ export function MealLogForm() {
       if (message.includes("Missing meal logs")) {
         try {
           initializeMealLogs(window.localStorage);
+          const weeklyLog = loadWeeklyLog(window.localStorage);
+          const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
+          saveWeeklyLog(window.localStorage, updatedWeeklyLog);
           const updated = appendMealLog(window.localStorage, entry);
           const updatedLogs = updated.map((item) => ({
             id: item.id,
