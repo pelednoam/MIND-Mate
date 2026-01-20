@@ -105,6 +105,9 @@ It is updated after each new module addition.
 ### `src/lib/persistence/supabaseTables.ts`
 - Centralized table names (`mind_setup`, `mind_weekly_log`, `mind_meal_logs`, `mind_espresso`, `mind_chat_history`).
 
+### `src/lib/persistence/supabaseUserStorage.ts`
+- Stores and loads the Supabase user ID in local storage.
+
 ### `src/lib/persistence/setupRepository.ts`
 - `fetchSetupState` / `upsertSetupState` for user setup.
 

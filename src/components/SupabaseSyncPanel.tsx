@@ -14,12 +14,31 @@ import {
   syncSetupFromSupabase,
   syncWeeklyLogFromSupabase
 } from "../lib/persistence/supabaseSync";
+import {
+  loadSupabaseUserId,
+  saveSupabaseUserId
+} from "../lib/persistence/supabaseUserStorage";
 
 export function SupabaseSyncPanel() {
   const [userId, setUserId] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [userStatus, setUserStatus] = useState("");
+
+  React.useEffect(() => {
+    try {
+      const savedUser = loadSupabaseUserId(window.localStorage);
+      setUserId(savedUser);
+      setUserStatus("Loaded saved Supabase user ID.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load Supabase user ID";
+      setUserStatus(message);
+    }
+  }, []);
 
   const validateUser = () => {
     if (userId.trim().length === 0) {
@@ -32,6 +51,7 @@ export function SupabaseSyncPanel() {
     setError("");
     try {
       validateUser();
+      saveSupabaseUserId(window.localStorage, userId);
       setIsSyncing(true);
       const client = getSupabaseClient();
       await syncSetupFromSupabase(client, userId, window.localStorage);
@@ -54,6 +74,7 @@ export function SupabaseSyncPanel() {
     setError("");
     try {
       validateUser();
+      saveSupabaseUserId(window.localStorage, userId);
       setIsSyncing(true);
       const client = getSupabaseClient();
       await pushSetupToSupabase(client, userId, window.localStorage);
@@ -87,6 +108,9 @@ export function SupabaseSyncPanel() {
           placeholder="user-123"
         />
       </label>
+      {userStatus ? (
+        <p className="mt-2 text-xs text-slate-500">{userStatus}</p>
+      ) : null}
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button
