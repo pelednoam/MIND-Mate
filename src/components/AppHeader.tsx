@@ -4,6 +4,7 @@ const NAV_LINKS = [
   { label: "Setup", href: "/setup" },
   { label: "Coach", href: "/coach" },
   { label: "Dashboard", href: "/dashboard" },
+  { label: "Scores", href: "/scores" },
   { label: "Nudges", href: "/nudges" },
   { label: "Context", href: "/context" },
   { label: "Chat", href: "/chat" },

@@ -17,6 +17,11 @@ const HOME_SECTIONS = [
     href: "/dashboard"
   },
   {
+    title: "Weekly Score Editor",
+    description: "Update servings per week for each category.",
+    href: "/scores"
+  },
+  {
     title: "Proactive Nudges",
     description: "Preview the daily nudge schedule.",
     href: "/nudges"

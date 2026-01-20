@@ -1,0 +1,125 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import {
+  HEALTHY_CATEGORIES,
+  LIMIT_CATEGORIES,
+  type WeeklyEntry
+} from "../lib/mindScore";
+import {
+  buildZeroWeeklyLog,
+  loadWeeklyLog,
+  saveWeeklyLog
+} from "../lib/weeklyScoreStorage";
+import { createWeeklyLog } from "../lib/mindScore";
+
+const CATEGORY_LABELS = [
+  ...HEALTHY_CATEGORIES,
+  ...LIMIT_CATEGORIES
+] as const;
+
+export function WeeklyScoreEditor() {
+  const [entries, setEntries] = useState<WeeklyEntry[]>(buildZeroWeeklyLog());
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    try {
+      const saved = loadWeeklyLog(window.localStorage);
+      setEntries(saved);
+      setStatus("Loaded saved weekly log.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : "Unable to load weekly log";
+      setError(message);
+    }
+  }, []);
+
+  const handleChange = (categoryId: WeeklyEntry["categoryId"], value: string) => {
+    const parsed = Number(value);
+    setEntries((prev) =>
+      prev.map((entry) =>
+        entry.categoryId === categoryId
+          ? {
+              ...entry,
+              servingsPerWeek: Number.isFinite(parsed) ? parsed : 0
+            }
+          : entry
+      )
+    );
+  };
+
+  const handleSave = () => {
+    setError("");
+    setStatus("");
+    try {
+      const validated = createWeeklyLog([...entries]);
+      saveWeeklyLog(window.localStorage, validated);
+      setStatus("Weekly log saved.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : "Unable to save weekly log";
+      setError(message);
+    }
+  };
+
+  const handleReset = () => {
+    setEntries(buildZeroWeeklyLog());
+    setStatus("Weekly log reset to zero.");
+    setError("");
+  };
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-slate-900">Weekly Score</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Update servings per week for each category.
+      </p>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        {entries.map((entry) => (
+          <label key={entry.categoryId} className="text-sm text-slate-600">
+            {getCategoryLabel(entry.categoryId)}
+            <input
+              type="number"
+              min="0"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              value={entry.servingsPerWeek}
+              onChange={(event) =>
+                handleChange(entry.categoryId, event.target.value)
+              }
+            />
+          </label>
+        ))}
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button
+          type="button"
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          onClick={handleSave}
+        >
+          Save weekly log
+        </button>
+        <button
+          type="button"
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+          onClick={handleReset}
+        >
+          Reset to zero
+        </button>
+      </div>
+
+      {status ? <p className="mt-3 text-sm text-emerald-600">{status}</p> : null}
+      {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
+    </section>
+  );
+}
+
+function getCategoryLabel(categoryId: WeeklyEntry["categoryId"]): string {
+  const match = CATEGORY_LABELS.find((category) => category.id === categoryId);
+  if (!match) {
+    throw new Error(`Unknown category label for ${categoryId}`);
+  }
+  return match.label;
+}
