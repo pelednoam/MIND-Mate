@@ -204,6 +204,10 @@ All repositories are tested with fake Supabase clients.
 - `src/components/NudgePreview.tsx` renders schedule.
 - `src/app/nudges/page.tsx`.
 
+### Supabase Sync
+- `src/components/SupabaseSyncPanel.tsx` pulls/pushes all local storage data to Supabase.
+- `src/app/sync/page.tsx`.
+
 ---
 
 ## 6. Tests
