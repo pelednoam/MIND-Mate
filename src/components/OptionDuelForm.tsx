@@ -60,6 +60,7 @@ export function OptionDuelForm() {
   const [applyError, setApplyError] = useState("");
   const [limitStatus, setLimitStatus] = useState("");
   const [limitError, setLimitError] = useState("");
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
   useEffect(() => {
     try {
@@ -138,29 +139,51 @@ export function OptionDuelForm() {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setApplyStatus("");
     setApplyError("");
+    setIsEvaluating(true);
 
     const activeOptions = includeThird
       ? options
       : options.slice(0, 2);
 
     try {
-    const payload = activeOptions.map((option) => mapToLunchOption(option));
-      const result = evaluateLunchOptions(payload, currentLimitServings);
-      setDecision(result);
+      const payload = activeOptions.map((option) => mapToLunchOption(option));
+      const response = await fetch("/api/option-duel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          options: payload,
+          currentLimitServings
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Option duel API request failed");
+      }
+
+      const data = (await response.json()) as {
+        decision: OptionDuelDecision;
+      };
+      setDecision(data.decision);
       setEvaluatedOptions(payload);
-      setSelectedOptionId(result.winnerId);
+      setSelectedOptionId(data.decision.winnerId);
     } catch (caught) {
+      const payload = activeOptions.map((option) => mapToLunchOption(option));
+      const fallback = evaluateLunchOptions(payload, currentLimitServings);
+      setDecision(fallback);
+      setEvaluatedOptions(payload);
+      setSelectedOptionId(fallback.winnerId);
       const message =
         caught instanceof Error ? caught.message : "Unexpected error";
-      setDecision(null);
-      setEvaluatedOptions([]);
-      setSelectedOptionId("");
-      setError(message);
+      setError(`${message} (using local evaluation)`);
+    } finally {
+      setIsEvaluating(false);
     }
   };
 
@@ -344,8 +367,9 @@ export function OptionDuelForm() {
         <button
           type="submit"
           className="self-start rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+          disabled={isEvaluating}
         >
-          Evaluate options
+          {isEvaluating ? "Evaluating..." : "Evaluate options"}
         </button>
       </form>
 
