@@ -1,5 +1,11 @@
-import { SetupScreen } from "@/components/SetupScreen";
+import { AppHome } from "@/components/AppHome";
 
 export default function HomePage() {
-  return <SetupScreen />;
+  return (
+    <main className="min-h-screen bg-slate-50 px-6 py-10">
+      <div className="mx-auto w-full max-w-5xl">
+        <AppHome />
+      </div>
+    </main>
+  );
 }
