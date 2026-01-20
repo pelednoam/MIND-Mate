@@ -22,13 +22,14 @@ import {
   fetchChatHistory,
   upsertChatHistory
 } from "../lib/persistence/chatRepository";
-import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
+import { useSupabaseUser } from "../lib/auth/useSupabaseUser";
 import {
   buildSmartSuggestions,
   type SmartSuggestion
 } from "../lib/smartSuggestions";
 
 export function SmartCoachChat() {
+  const { userId, error: authError } = useSupabaseUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
@@ -56,22 +57,23 @@ export function SmartCoachChat() {
         }
       }
 
-      try {
-        const userId = loadSupabaseUserId(window.localStorage);
-        const client = getSupabaseClient();
-        const remote = await fetchChatHistory(client, userId);
-        saveChatHistory(window.localStorage, remote);
-        if (isMounted) {
-          setMessages(remote);
-          setHistoryStatus("Loaded chat history from Supabase.");
-        }
-      } catch (caught) {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to load chat history from Supabase";
-        if (isMounted) {
-          setHistoryStatus(message);
+      if (userId) {
+        try {
+          const client = getSupabaseClient();
+          const remote = await fetchChatHistory(client, userId);
+          saveChatHistory(window.localStorage, remote);
+          if (isMounted) {
+            setMessages(remote);
+            setHistoryStatus("Loaded chat history from Supabase.");
+          }
+        } catch (caught) {
+          const message =
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load chat history from Supabase";
+          if (isMounted) {
+            setHistoryStatus(message);
+          }
         }
       }
     };
@@ -81,7 +83,7 @@ export function SmartCoachChat() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -145,7 +147,7 @@ export function SmartCoachChat() {
       }
       setMessages(nextMessages);
       setDraft("");
-      void syncChatHistory(nextMessages).catch((caught) => {
+      void syncChatHistory(userId, nextMessages).catch((caught) => {
         const message =
           caught instanceof Error
             ? caught.message
@@ -170,7 +172,7 @@ export function SmartCoachChat() {
       }
       setMessages(nextMessages);
       setError("Coach API unavailable, using local response.");
-      void syncChatHistory(nextMessages).catch((caught) => {
+      void syncChatHistory(userId, nextMessages).catch((caught) => {
         const message =
           caught instanceof Error
             ? caught.message
@@ -230,6 +232,9 @@ export function SmartCoachChat() {
       </form>
 
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
+      {authError ? (
+        <p className="mt-2 text-xs text-rose-600">{authError}</p>
+      ) : null}
       {historyStatus ? (
         <p className="mt-2 text-xs text-slate-500">{historyStatus}</p>
       ) : null}
@@ -263,8 +268,13 @@ export function SmartCoachChat() {
   );
 }
 
-async function syncChatHistory(messages: ChatMessage[]) {
-  const userId = loadSupabaseUserId(window.localStorage);
+async function syncChatHistory(
+  userId: string | null,
+  messages: ChatMessage[]
+) {
+  if (!userId) {
+    throw new Error("Sign in to sync chat history.");
+  }
   const client = getSupabaseClient();
   await upsertChatHistory(client, userId, messages);
 }

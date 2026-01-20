@@ -259,6 +259,12 @@ All repositories are tested with fake Supabase clients.
 - `src/app/setup/page.tsx` and `src/app/page.tsx` render the setup flow and
   the home hub.
 
+### Auth
+- `src/lib/auth/useSupabaseUser.ts` tracks the authenticated Supabase user ID.
+- `src/components/AuthPanel.tsx` handles magic-link sign-in and sign-out.
+- `src/app/auth/page.tsx` wraps the account UI.
+- Client features that sync with Supabase rely on the authenticated user ID.
+
 ### Option Duel
 - `src/components/OptionDuelForm.tsx` uses the API route with local fallback.
 - Applies the chosen option to the weekly log after evaluation.
@@ -328,4 +334,4 @@ All repositories are tested with fake Supabase clients.
 
 ## 10. Pending Work
 
-- Auth/user identity (secure user_id handling instead of manual entry).
+- Apply Supabase auth/RLS policies to restrict per-user data access.

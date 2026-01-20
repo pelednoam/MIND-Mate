@@ -20,13 +20,14 @@ import {
   fetchSetupState,
   upsertSetupState
 } from "../lib/persistence/setupRepository";
-import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
+import { useSupabaseUser } from "../lib/auth/useSupabaseUser";
 
 type SetupFormState = SetupState;
 const INITIAL_BREAKFAST = DAILY_ANCHORS.breakfast.join(", ");
 const INITIAL_DINNER = DAILY_ANCHORS.dinner.join(", ");
 
 export function SetupScreen() {
+  const { userId, error: authError } = useSupabaseUser();
   const [formState, setFormState] = useState<SetupFormState>({
     breakfastRoutine: INITIAL_BREAKFAST,
     dinnerRoutine: INITIAL_DINNER,
@@ -37,24 +38,33 @@ export function SetupScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    const load = async () => {
-      try {
-        const saved = loadSetupState(window.localStorage);
-        if (isMounted) {
-          setFormState(saved);
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Unable to load setup state";
-        if (isMounted) {
-          setErrorMessage(message);
-        }
+    try {
+      const saved = loadSetupState(window.localStorage);
+      if (isMounted) {
+        setFormState(saved);
       }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to load setup state";
+      if (isMounted) {
+        setErrorMessage(message);
+      }
+    }
 
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadRemote = async () => {
+      if (!userId) {
+        return;
+      }
       try {
-        const userId = loadSupabaseUserId(window.localStorage);
         const client = getSupabaseClient();
         const remote = await fetchSetupState(client, userId);
         if (isMounted) {
@@ -72,12 +82,12 @@ export function SetupScreen() {
       }
     };
 
-    void load();
+    void loadRemote();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const handleChange =
     (field: keyof SetupFormState) =>
@@ -94,7 +104,10 @@ export function SetupScreen() {
     try {
       saveSetupState(window.localStorage, formState);
       setStatusMessage("Setup saved to local storage.");
-      const userId = loadSupabaseUserId(window.localStorage);
+      if (!userId) {
+        setErrorMessage("Sign in to save setup to Supabase.");
+        return;
+      }
       const client = getSupabaseClient();
       void upsertSetupState(client, userId, formState)
         .then(() => {
@@ -274,6 +287,9 @@ export function SetupScreen() {
             >
               Save setup
             </button>
+            {authError ? (
+              <span className="text-sm text-rose-600">{authError}</span>
+            ) : null}
             {statusMessage ? (
               <span className="text-sm text-slate-600">{statusMessage}</span>
             ) : null}

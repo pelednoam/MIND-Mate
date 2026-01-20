@@ -19,7 +19,7 @@ import {
   fetchWeeklyLog,
   upsertWeeklyLog
 } from "../lib/persistence/weeklyLogRepository";
-import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
+import { useSupabaseUser } from "../lib/auth/useSupabaseUser";
 
 const CATEGORY_LABELS = [
   ...HEALTHY_CATEGORIES,
@@ -27,6 +27,7 @@ const CATEGORY_LABELS = [
 ] as const;
 
 export function WeeklyScoreEditor() {
+  const { userId, error: authError } = useSupabaseUser();
   const [entries, setEntries] = useState<WeeklyEntry[]>(buildZeroWeeklyLog());
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -48,8 +49,10 @@ export function WeeklyScoreEditor() {
         }
       }
 
+      if (!userId) {
+        return;
+      }
       try {
-        const userId = loadSupabaseUserId(window.localStorage);
         const client = getSupabaseClient();
         const remote = await fetchWeeklyLog(client, userId);
         if (isMounted) {
@@ -72,7 +75,7 @@ export function WeeklyScoreEditor() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const handleChange = (categoryId: WeeklyEntry["categoryId"], value: string) => {
     const parsed = Number(value);
@@ -95,7 +98,10 @@ export function WeeklyScoreEditor() {
       const validated = createWeeklyLog([...entries]);
       saveWeeklyLog(window.localStorage, validated);
       setStatus("Weekly log saved.");
-      const userId = loadSupabaseUserId(window.localStorage);
+      if (!userId) {
+        setError("Sign in to save weekly log to Supabase.");
+        return;
+      }
       const client = getSupabaseClient();
       void upsertWeeklyLog(client, userId, validated)
         .then(() => {
@@ -130,7 +136,10 @@ export function WeeklyScoreEditor() {
       saveWeeklyLog(window.localStorage, rebuilt);
       setEntries(rebuilt);
       setStatus("Weekly log recalculated from meal logs.");
-      const userId = loadSupabaseUserId(window.localStorage);
+      if (!userId) {
+        setError("Sign in to save weekly log to Supabase.");
+        return;
+      }
       const client = getSupabaseClient();
       void upsertWeeklyLog(client, userId, rebuilt)
         .then(() => {
@@ -200,6 +209,9 @@ export function WeeklyScoreEditor() {
         </button>
       </div>
 
+      {authError ? (
+        <p className="mt-3 text-sm text-rose-600">{authError}</p>
+      ) : null}
       {status ? <p className="mt-3 text-sm text-emerald-600">{status}</p> : null}
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
     </section>

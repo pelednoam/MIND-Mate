@@ -11,3 +11,10 @@ fcm:
   privateKey: |
     line1
     line2
+  web:
+    apiKey: "replace-with-web-api-key"
+    authDomain: "replace-with-auth-domain"
+    projectId: "replace-with-web-project-id"
+    appId: "replace-with-web-app-id"
+    messagingSenderId: "replace-with-sender-id"
+    vapidKey: "replace-with-web-vapid-key"

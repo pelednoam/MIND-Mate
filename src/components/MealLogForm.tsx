@@ -24,7 +24,7 @@ import {
   upsertMealLogs
 } from "../lib/persistence/mealLogRepository";
 import { upsertWeeklyLog } from "../lib/persistence/weeklyLogRepository";
-import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
+import { useSupabaseUser } from "../lib/auth/useSupabaseUser";
 
 type MealDraft = {
   mealType: MealType;
@@ -54,6 +54,7 @@ const INITIAL_DRAFT: MealDraft = {
 };
 
 export function MealLogForm() {
+  const { userId, error: authError } = useSupabaseUser();
   const [draft, setDraft] = useState<MealDraft>(INITIAL_DRAFT);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -82,21 +83,22 @@ export function MealLogForm() {
         }
       }
 
-      try {
-        const userId = loadSupabaseUserId(window.localStorage);
-        const client = getSupabaseClient();
-        const remote = await fetchMealLogs(client, userId);
-        saveMealLogs(window.localStorage, remote);
-        if (isMounted) {
-          setLogs(remote.map(toMealLogView));
-        }
-      } catch (caught) {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to load meal logs from Supabase";
-        if (isMounted) {
-          setError(message);
+      if (userId) {
+        try {
+          const client = getSupabaseClient();
+          const remote = await fetchMealLogs(client, userId);
+          saveMealLogs(window.localStorage, remote);
+          if (isMounted) {
+            setLogs(remote.map(toMealLogView));
+          }
+        } catch (caught) {
+          const message =
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load meal logs from Supabase";
+          if (isMounted) {
+            setError(message);
+          }
         }
       }
     };
@@ -106,7 +108,7 @@ export function MealLogForm() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -131,7 +133,7 @@ export function MealLogForm() {
       setLogs(updatedLogs.map(toMealLogView));
       setStatus(`Logged ${entry.mealType}: ${entry.label}`);
       setDraft(INITIAL_DRAFT);
-      void syncSupabase(updatedWeeklyLog, updatedLogs).catch((caught) => {
+      void syncSupabase(userId, updatedWeeklyLog, updatedLogs).catch((caught) => {
         const message =
           caught instanceof Error
             ? caught.message
@@ -161,7 +163,8 @@ export function MealLogForm() {
           setLogs(updatedLogs.map(toMealLogView));
           setStatus(`Logged ${entry.mealType}: ${entry.label}`);
           setDraft(INITIAL_DRAFT);
-          void syncSupabase(updatedWeeklyLog, updatedLogs).catch((caught) => {
+          void syncSupabase(userId, updatedWeeklyLog, updatedLogs).catch(
+            (caught) => {
             const message =
               caught instanceof Error
                 ? caught.message
@@ -326,6 +329,9 @@ export function MealLogForm() {
         </button>
       </form>
 
+      {authError ? (
+        <p className="mt-4 text-sm text-rose-600">{authError}</p>
+      ) : null}
       {status ? <p className="mt-4 text-sm text-emerald-600">{status}</p> : null}
       {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
       {warnings.length > 0 ? (
@@ -384,10 +390,13 @@ function persistMealLog(entry: ReturnType<typeof createMealLogEntry>) {
 }
 
 async function syncSupabase(
+  userId: string | null,
   updatedWeeklyLog: ReturnType<typeof loadWeeklyLog>,
   updatedLogs: ReturnType<typeof loadMealLogs>
 ) {
-  const userId = loadSupabaseUserId(window.localStorage);
+  if (!userId) {
+    throw new Error("Sign in to sync meal logs.");
+  }
   const client = getSupabaseClient();
   await upsertWeeklyLog(client, userId, updatedWeeklyLog);
   await upsertMealLogs(client, userId, updatedLogs);

@@ -1,6 +1,7 @@
 import React from "react";
 
 const NAV_LINKS = [
+  { label: "Account", href: "/auth" },
   { label: "Setup", href: "/setup" },
   { label: "Coach", href: "/coach" },
   { label: "Dashboard", href: "/dashboard" },

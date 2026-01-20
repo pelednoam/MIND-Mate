@@ -21,9 +21,10 @@ import {
   upsertEspressoState
 } from "../lib/persistence/espressoRepository";
 import { fetchWeeklyLog } from "../lib/persistence/weeklyLogRepository";
-import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
+import { useSupabaseUser } from "../lib/auth/useSupabaseUser";
 
 export function WeeklyScoreDashboard() {
+  const { userId, error: authError } = useSupabaseUser();
   const [model, setModel] = useState<ReturnType<
     typeof buildDashboardModel
   > | null>(null);
@@ -57,46 +58,46 @@ export function WeeklyScoreDashboard() {
         }
       }
 
-      try {
-        const userId = loadSupabaseUserId(window.localStorage);
-        const client = getSupabaseClient();
-        const remote = await fetchWeeklyLog(client, userId);
-        const espressoState =
-          espresso ?? loadEspressoState(window.localStorage);
-        saveWeeklyLog(window.localStorage, remote);
-        if (isMounted) {
-          setWeeklyLog(remote);
-          setEspresso(espressoState);
-          setModel(buildModel(remote, espressoState));
+      if (userId) {
+        try {
+          const client = getSupabaseClient();
+          const remote = await fetchWeeklyLog(client, userId);
+          const espressoState =
+            espresso ?? loadEspressoState(window.localStorage);
+          saveWeeklyLog(window.localStorage, remote);
+          if (isMounted) {
+            setWeeklyLog(remote);
+            setEspresso(espressoState);
+            setModel(buildModel(remote, espressoState));
+          }
+        } catch (caught) {
+          const message =
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load weekly log from Supabase";
+          if (isMounted) {
+            setError(message);
+          }
         }
-      } catch (caught) {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to load weekly log from Supabase";
-        if (isMounted) {
-          setError(message);
-        }
-      }
 
-      try {
-        const userId = loadSupabaseUserId(window.localStorage);
-        const client = getSupabaseClient();
-        const remote = await fetchEspressoState(client, userId);
-        const log = weeklyLog ?? loadWeeklyLog(window.localStorage);
-        saveEspressoState(window.localStorage, remote);
-        if (isMounted) {
-          setEspresso(remote);
-          setWeeklyLog(log);
-          setModel(buildModel(log, remote));
-        }
-      } catch (caught) {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to load espresso tracker from Supabase";
-        if (isMounted) {
-          setEspressoError(message);
+        try {
+          const client = getSupabaseClient();
+          const remote = await fetchEspressoState(client, userId);
+          const log = weeklyLog ?? loadWeeklyLog(window.localStorage);
+          saveEspressoState(window.localStorage, remote);
+          if (isMounted) {
+            setEspresso(remote);
+            setWeeklyLog(log);
+            setModel(buildModel(log, remote));
+          }
+        } catch (caught) {
+          const message =
+            caught instanceof Error
+              ? caught.message
+              : "Unable to load espresso tracker from Supabase";
+          if (isMounted) {
+            setEspressoError(message);
+          }
         }
       }
     };
@@ -106,7 +107,7 @@ export function WeeklyScoreDashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const handleInitialize = () => {
     setError("");
@@ -117,23 +118,18 @@ export function WeeklyScoreDashboard() {
     saveEspressoState(window.localStorage, espressoState);
     setEspresso(espressoState);
     setModel(buildModel(log, espressoState));
-    try {
-      const userId = loadSupabaseUserId(window.localStorage);
-      const client = getSupabaseClient();
-      void upsertEspressoState(client, userId, espressoState).catch((caught) => {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to save espresso tracker to Supabase";
-        setEspressoError(message);
-      });
-    } catch (caught) {
+    if (!userId) {
+      setEspressoError("Sign in to save espresso tracker to Supabase.");
+      return;
+    }
+    const client = getSupabaseClient();
+    void upsertEspressoState(client, userId, espressoState).catch((caught) => {
       const message =
         caught instanceof Error
           ? caught.message
           : "Unable to save espresso tracker to Supabase";
       setEspressoError(message);
-    }
+    });
   };
 
   const handleIncrementEspresso = () => {
@@ -148,23 +144,18 @@ export function WeeklyScoreDashboard() {
     saveEspressoState(window.localStorage, next);
     setEspresso(next);
     setModel(buildModel(weeklyLog, next));
-    try {
-      const userId = loadSupabaseUserId(window.localStorage);
-      const client = getSupabaseClient();
-      void upsertEspressoState(client, userId, next).catch((caught) => {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to save espresso tracker to Supabase";
-        setEspressoError(message);
-      });
-    } catch (caught) {
+    if (!userId) {
+      setEspressoError("Sign in to save espresso tracker to Supabase.");
+      return;
+    }
+    const client = getSupabaseClient();
+    void upsertEspressoState(client, userId, next).catch((caught) => {
       const message =
         caught instanceof Error
           ? caught.message
           : "Unable to save espresso tracker to Supabase";
       setEspressoError(message);
-    }
+    });
   };
 
   const handleResetEspresso = () => {
@@ -177,23 +168,18 @@ export function WeeklyScoreDashboard() {
     setEspresso(next);
     setEspressoError("");
     setModel(buildModel(weeklyLog, next));
-    try {
-      const userId = loadSupabaseUserId(window.localStorage);
-      const client = getSupabaseClient();
-      void upsertEspressoState(client, userId, next).catch((caught) => {
-        const message =
-          caught instanceof Error
-            ? caught.message
-            : "Unable to save espresso tracker to Supabase";
-        setEspressoError(message);
-      });
-    } catch (caught) {
+    if (!userId) {
+      setEspressoError("Sign in to save espresso tracker to Supabase.");
+      return;
+    }
+    const client = getSupabaseClient();
+    void upsertEspressoState(client, userId, next).catch((caught) => {
       const message =
         caught instanceof Error
           ? caught.message
           : "Unable to save espresso tracker to Supabase";
       setEspressoError(message);
-    }
+    });
   };
 
   if (!model) {
@@ -231,6 +217,7 @@ export function WeeklyScoreDashboard() {
   return (
     <div className="space-y-6">
       <ProgressDashboard model={model} />
+      {authError ? <p className="text-sm text-rose-600">{authError}</p> : null}
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-700 shadow-sm">
         <h3 className="text-sm font-semibold uppercase text-slate-500">

@@ -2,6 +2,11 @@ import React from "react";
 
 const HOME_SECTIONS = [
   {
+    title: "Account",
+    description: "Sign in to sync data and enable notifications.",
+    href: "/auth"
+  },
+  {
     title: "Setup",
     description: "Configure your routines and coach personality.",
     href: "/setup"

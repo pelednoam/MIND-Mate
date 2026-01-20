@@ -1,31 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { registerForPush } from "../lib/notifications/fcmWeb";
-import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
+import { useSupabaseUser } from "../lib/auth/useSupabaseUser";
 
 export function NotificationRegistration() {
-  const [userId, setUserId] = useState("");
+  const { userId, status: authStatus, error: authError } = useSupabaseUser();
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
-
-  useEffect(() => {
-    try {
-      const savedUser = loadSupabaseUserId(window.localStorage);
-      setUserId(savedUser);
-    } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : "Supabase user ID is missing";
-      setError(message);
-    }
-  }, []);
 
   const handleRegister = async () => {
     setError("");
     setStatus("");
     try {
       setIsRegistering(true);
+      if (!userId) {
+        throw new Error("Sign in to enable notifications");
+      }
       const token = await registerForPush(userId);
       setStatus(`Notifications enabled (token ${token.slice(0, 8)}...)`);
     } catch (caught) {
@@ -49,7 +41,9 @@ export function NotificationRegistration() {
           Supabase user ID
         </p>
         <p className="mt-1 text-sm text-slate-700">
-          {userId || "Not set"}
+          {authStatus === "loading" ? "Checking session..." : null}
+          {authStatus === "ready" && userId ? userId : null}
+          {authStatus === "ready" && !userId ? "Not signed in" : null}
         </p>
       </div>
 
@@ -62,6 +56,9 @@ export function NotificationRegistration() {
         {isRegistering ? "Enabling..." : "Enable notifications"}
       </button>
 
+      {authError ? (
+        <p className="mt-3 text-sm text-rose-600">{authError}</p>
+      ) : null}
       {status ? <p className="mt-3 text-sm text-emerald-600">{status}</p> : null}
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
     </section>
