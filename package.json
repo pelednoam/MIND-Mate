@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "validate:config": "node scripts/validate-config.js",
+    "predev": "npm run validate:config",
     "dev": "next dev",
     "build": "next build",
+    "prestart": "npm run validate:config",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run"

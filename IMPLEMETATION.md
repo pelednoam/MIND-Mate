@@ -3,6 +3,7 @@
 This document summarizes the modules implemented so far, with short notes on how
 each module is implemented and what it does. It is updated after each new module
 addition. Runtime configuration now lives in `config/mindmate.yaml`.
+See `INSTALL.md` for setup instructions.
 
 ---
 
@@ -206,6 +207,9 @@ addition. Runtime configuration now lives in `config/mindmate.yaml`.
 ### `src/lib/config/appConfig.ts`
 - Loads and validates the YAML configuration into typed runtime config.
 - Enforces required fields to avoid silent defaults.
+
+### `scripts/validate-config.js`
+- Validates the YAML file and fails on missing/placeholder values.
 
 ---
 
