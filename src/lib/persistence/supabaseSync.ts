@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { WeeklyLog } from "../mindScore";
+import type { MealLogEntry } from "../mealLogging";
 import type { StorageLike as SetupStorage } from "../setupStorage";
 import type { StorageLike as WeeklyStorage } from "../weeklyScoreStorage";
 import type { StorageLike as MealStorage } from "../mealLogStorage";
@@ -14,6 +16,36 @@ import { saveWeeklyLog, loadWeeklyLog } from "../weeklyScoreStorage";
 import { saveMealLogs, loadMealLogs } from "../mealLogStorage";
 import { saveEspressoState, loadEspressoState } from "../espressoStorage";
 import { saveChatHistory, loadChatHistory } from "../chatStorage";
+
+export async function pullWeeklyLog(
+  client: SupabaseClient,
+  userId: string
+): Promise<WeeklyLog> {
+  return fetchWeeklyLog(client, userId);
+}
+
+export async function pushWeeklyLog(
+  client: SupabaseClient,
+  userId: string,
+  log: WeeklyLog
+): Promise<void> {
+  await upsertWeeklyLog(client, userId, log);
+}
+
+export async function pullMealLogs(
+  client: SupabaseClient,
+  userId: string
+): Promise<MealLogEntry[]> {
+  return fetchMealLogs(client, userId);
+}
+
+export async function pushMealLogs(
+  client: SupabaseClient,
+  userId: string,
+  logs: MealLogEntry[]
+): Promise<void> {
+  await upsertMealLogs(client, userId, logs);
+}
 
 export async function syncSetupFromSupabase(
   client: SupabaseClient,

@@ -120,6 +120,11 @@ It is updated after each new module addition.
 ### `src/lib/persistence/chatRepository.ts`
 - `fetchChatHistory` / `upsertChatHistory` for chat messages.
 
+### `src/lib/persistence/supabaseSync.ts`
+- Pull/push helpers for weekly logs and meal logs.
+- Sync helpers that copy Supabase records into local storage and push local storage
+  back to Supabase for setup, weekly log, meal logs, espresso, and chat.
+
 ### `src/lib/persistence/mealLogRepository.ts`
 - `fetchMealLogs` / `upsertMealLogs` for meal logs.
 
@@ -129,6 +134,17 @@ It is updated after each new module addition.
 ### `src/lib/persistence/supabaseSync.ts`
 - Sync helpers that pull/push setup, weekly log, meal logs, espresso, and chat
   between Supabase and local storage.
+
+---
+
+## 5. Supabase Sync UI
+
+### `src/components/SupabaseSyncPanel.tsx`
+- Manual UI for pulling/pushing all local state to Supabase.
+- Requires a user id and uses the sync helpers + Supabase client.
+
+### `src/app/sync/page.tsx`
+- Screen wrapper for the Supabase sync panel.
 
 All repositories are tested with fake Supabase clients.
 

@@ -8,7 +8,8 @@ const NAV_LINKS = [
   { label: "Nudges", href: "/nudges" },
   { label: "Context", href: "/context" },
   { label: "Chat", href: "/chat" },
-  { label: "Log", href: "/log" }
+  { label: "Log", href: "/log" },
+  { label: "Sync", href: "/sync" }
 ] as const;
 
 export function AppHeader() {

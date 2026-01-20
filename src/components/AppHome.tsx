@@ -45,6 +45,11 @@ const HOME_SECTIONS = [
     title: "Warning & Repair",
     description: "Preview warning triggers and repair guidance.",
     href: "/repairs"
+  },
+  {
+    title: "Supabase Sync",
+    description: "Pull or push local data to Supabase.",
+    href: "/sync"
   }
 ] as const;
 
