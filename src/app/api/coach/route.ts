@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { generateCoachResponse } from "@/lib/coachResponder";
+import { generateText } from "ai";
 import type { CoachPrompt } from "@/lib/coachPrompt";
+import { getCoachModel } from "@/lib/llm/llmClient";
 
 type CoachRequestBody = {
   prompt: CoachPrompt;
@@ -21,6 +22,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const reply = generateCoachResponse(body.prompt);
-  return NextResponse.json({ reply });
+  try {
+    const result = await generateText({
+      model: getCoachModel(),
+      system: body.prompt.system,
+      prompt: body.prompt.user
+    });
+    return NextResponse.json({ reply: result.text });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "LLM request failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

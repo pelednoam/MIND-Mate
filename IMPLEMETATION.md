@@ -161,7 +161,20 @@ addition.
 
 ---
 
-## 4. Supabase Sync UI
+## 4. LLM Integration
+
+### `src/lib/llm/llmConfig.ts`
+- Centralizes LLM provider configuration and enforces required env vars.
+- Requires `LLM_PROVIDER`, `LLM_MODEL`, and the provider API key to avoid silent
+  fallbacks.
+
+### `src/lib/llm/llmClient.ts`
+- Builds the Vercel AI SDK model instance based on the configured provider.
+- Supports OpenAI (`gpt-4o`) and Gemini (`gemini-1.5-pro`).
+
+---
+
+## 5. Supabase Sync UI
 
 ### `src/components/SupabaseSyncPanel.tsx`
 - Manual UI for pulling/pushing all local state to Supabase.
@@ -174,11 +187,11 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 5. API Routes (Server)
+## 6. API Routes (Server)
 
 ### `src/app/api/coach/route.ts`
 - Accepts `{ prompt }` and returns `{ reply }`.
-- Uses the local responder for now; placeholder for real LLM integration.
+- Uses Vercel AI SDK (`generateText`) with the configured LLM provider.
 
 ### `src/app/api/option-duel/route.ts`
 - Accepts options + limit servings and returns decision.
@@ -186,7 +199,7 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 6. UI Components / Screens
+## 7. UI Components / Screens
 
 ### Setup & Home
 - `src/components/SetupScreen.tsx` loads setup from local storage and Supabase.
@@ -248,7 +261,7 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 7. Tests
+## 8. Tests
 
 - All logic modules have Vitest coverage under `tests/`.
 - UI components render tests use `react-dom/server` and check headings/text.
@@ -256,8 +269,7 @@ All repositories are tested with fake Supabase clients.
 
 ---
 
-## 8. Pending Work
+## 9. Pending Work
 
 - Auth/user identity (secure user_id handling instead of manual entry).
-- Real LLM integration (Vercel AI SDK with OpenAI/Gemini).
 - Background worker + FCM for push notifications.

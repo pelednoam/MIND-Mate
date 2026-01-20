@@ -145,6 +145,13 @@ export function SmartCoachChat() {
       }
       setMessages(nextMessages);
       setDraft("");
+      void syncChatHistory(nextMessages).catch((caught) => {
+        const message =
+          caught instanceof Error
+            ? caught.message
+            : "Unable to save chat history to Supabase";
+        setError(message);
+      });
     } catch (caught) {
       const fallback = generateCoachResponse(prompt);
       const nextMessages: ChatMessage[] = [
