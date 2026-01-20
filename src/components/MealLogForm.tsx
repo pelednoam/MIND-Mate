@@ -1,18 +1,30 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { createMealLogEntry, type MealType } from "../lib/mealLogging";
+import {
+  createMealLogEntry,
+  type MealLogEntry,
+  type MealType
+} from "../lib/mealLogging";
 import { HEALTHY_CATEGORIES } from "../lib/mindScore";
 import { WARNING_REPAIR_ENGINE, type LimitFood } from "../lib/mindRules";
 import {
   appendMealLog,
   initializeMealLogs,
-  loadMealLogs
+  loadMealLogs,
+  saveMealLogs
 } from "../lib/mealLogStorage";
 import { loadWeeklyLog, saveWeeklyLog } from "../lib/weeklyScoreStorage";
 import { applyMealLogEntry } from "../lib/mealLogUpdater";
 import { buildMealWarningDecisions } from "../lib/mealLogWarnings";
 import type { WarningRepairDecision } from "../lib/warningRepair";
+import { getSupabaseClient } from "../lib/persistence/supabaseClient";
+import {
+  fetchMealLogs,
+  upsertMealLogs
+} from "../lib/persistence/mealLogRepository";
+import { upsertWeeklyLog } from "../lib/persistence/weeklyLogRepository";
+import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
 
 type MealDraft = {
   mealType: MealType;
@@ -49,24 +61,51 @@ export function MealLogForm() {
   const [warnings, setWarnings] = useState<WarningRepairDecision[]>([]);
 
   useEffect(() => {
-    try {
-      const stored = loadMealLogs(window.localStorage);
-      const view = stored.map((entry) => ({
-        id: entry.id,
-        label: entry.label,
-        mealType: entry.mealType,
-        date: entry.date
-      }));
-      setLogs(view);
-    } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : "Unable to load meal logs";
-      if (message.includes("Missing meal logs")) {
-        setStatus("No meal logs yet.");
-        return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const stored = loadMealLogs(window.localStorage);
+        if (isMounted) {
+          setLogs(stored.map(toMealLogView));
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error ? caught.message : "Unable to load meal logs";
+        if (message.includes("Missing meal logs")) {
+          if (isMounted) {
+            setStatus("No meal logs yet.");
+          }
+          return;
+        }
+        if (isMounted) {
+          setError(message);
+        }
       }
-      setError(message);
-    }
+
+      try {
+        const userId = loadSupabaseUserId(window.localStorage);
+        const client = getSupabaseClient();
+        const remote = await fetchMealLogs(client, userId);
+        saveMealLogs(window.localStorage, remote);
+        if (isMounted) {
+          setLogs(remote.map(toMealLogView));
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error
+            ? caught.message
+            : "Unable to load meal logs from Supabase";
+        if (isMounted) {
+          setError(message);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -87,46 +126,48 @@ export function MealLogForm() {
         containsLactose: draft.containsLactose
       });
 
-      const weeklyLog = loadWeeklyLog(window.localStorage);
-      const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
-      saveWeeklyLog(window.localStorage, updatedWeeklyLog);
+      const { updatedWeeklyLog, updatedLogs } = persistMealLog(entry);
       setWarnings(buildMealWarningDecisions(updatedWeeklyLog, entry.limitFoods));
-
-      let updated = appendMealLog(window.localStorage, entry);
-      if (updated.length === 0) {
-        throw new Error("Meal log did not persist");
-      }
-      const updatedLogs = updated.map((item) => ({
-        id: item.id,
-        label: item.label,
-        mealType: item.mealType,
-        date: item.date
-      }));
-      setLogs(updatedLogs);
+      setLogs(updatedLogs.map(toMealLogView));
       setStatus(`Logged ${entry.mealType}: ${entry.label}`);
       setDraft(INITIAL_DRAFT);
+      void syncSupabase(updatedWeeklyLog, updatedLogs).catch((caught) => {
+        const message =
+          caught instanceof Error
+            ? caught.message
+            : "Unable to sync meal logs to Supabase";
+        setError(message);
+      });
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "Unexpected error";
       if (message.includes("Missing meal logs")) {
         try {
           initializeMealLogs(window.localStorage);
-          const weeklyLog = loadWeeklyLog(window.localStorage);
-          const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
-          saveWeeklyLog(window.localStorage, updatedWeeklyLog);
+          const entry = createMealLogEntry({
+            id: crypto.randomUUID(),
+            mealType: draft.mealType,
+            label: draft.label,
+            date: draft.date,
+            healthyCategories: draft.healthyCategories,
+            limitFoods: draft.limitFoods,
+            containsBeans: draft.containsBeans,
+            containsLactose: draft.containsLactose
+          });
+          const { updatedWeeklyLog, updatedLogs } = persistMealLog(entry);
           setWarnings(
             buildMealWarningDecisions(updatedWeeklyLog, entry.limitFoods)
           );
-          const updated = appendMealLog(window.localStorage, entry);
-          const updatedLogs = updated.map((item) => ({
-            id: item.id,
-            label: item.label,
-            mealType: item.mealType,
-            date: item.date
-          }));
-          setLogs(updatedLogs);
+          setLogs(updatedLogs.map(toMealLogView));
           setStatus(`Logged ${entry.mealType}: ${entry.label}`);
           setDraft(INITIAL_DRAFT);
+          void syncSupabase(updatedWeeklyLog, updatedLogs).catch((caught) => {
+            const message =
+              caught instanceof Error
+                ? caught.message
+                : "Unable to sync meal logs to Supabase";
+            setError(message);
+          });
           return;
         } catch (innerError) {
           const innerMessage =
@@ -320,4 +361,34 @@ export function MealLogForm() {
       ) : null}
     </section>
   );
+}
+
+function toMealLogView(entry: MealLogEntry): MealLogView {
+  return {
+    id: entry.id,
+    label: entry.label,
+    mealType: entry.mealType,
+    date: entry.date
+  };
+}
+
+function persistMealLog(entry: ReturnType<typeof createMealLogEntry>) {
+  const weeklyLog = loadWeeklyLog(window.localStorage);
+  const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
+  saveWeeklyLog(window.localStorage, updatedWeeklyLog);
+  const updatedLogs = appendMealLog(window.localStorage, entry);
+  if (updatedLogs.length === 0) {
+    throw new Error("Meal log did not persist");
+  }
+  return { updatedWeeklyLog, updatedLogs };
+}
+
+async function syncSupabase(
+  updatedWeeklyLog: ReturnType<typeof loadWeeklyLog>,
+  updatedLogs: ReturnType<typeof loadMealLogs>
+) {
+  const userId = loadSupabaseUserId(window.localStorage);
+  const client = getSupabaseClient();
+  await upsertWeeklyLog(client, userId, updatedWeeklyLog);
+  await upsertMealLogs(client, userId, updatedLogs);
 }

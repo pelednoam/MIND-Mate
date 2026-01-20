@@ -193,6 +193,7 @@ All repositories are tested with fake Supabase clients.
 
 ### Meal Logging
 - `src/components/MealLogForm.tsx` logs meals, persists, updates weekly log.
+- Pulls meal logs from Supabase and upserts meal logs + weekly log on submit.
 - Shows warning/repair output per log.
 - `src/app/log/page.tsx`.
 

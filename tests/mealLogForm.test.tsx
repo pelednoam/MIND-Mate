@@ -9,4 +9,10 @@ describe("MealLogForm", () => {
     expect(markup).toContain("Meal Logging");
     expect(markup).toContain("Log meal");
   });
+
+  it("includes sensitivity toggles", () => {
+    const markup = renderToString(<MealLogForm />);
+    expect(markup).toContain("Contains beans");
+    expect(markup).toContain("Contains lactose");
+  });
 });
