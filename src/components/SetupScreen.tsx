@@ -1,7 +1,7 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { useEffect, useState } from "react";
 import {
   DAILY_ANCHORS,
   DEFAULT_COACH_PERSONALITY,
@@ -9,12 +9,18 @@ import {
   SCORING_ADJUSTMENT,
   SENSITIVITY_TOGGLES,
   WARNING_REPAIR_ENGINE
-} from "@/lib/mindRules";
+} from "../lib/mindRules";
 import {
   loadSetupState,
   saveSetupState,
   type SetupState
-} from "@/lib/setupStorage";
+} from "../lib/setupStorage";
+import { getSupabaseClient } from "../lib/persistence/supabaseClient";
+import {
+  fetchSetupState,
+  upsertSetupState
+} from "../lib/persistence/setupRepository";
+import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
 
 type SetupFormState = SetupState;
 const INITIAL_BREAKFAST = DAILY_ANCHORS.breakfast.join(", ");
@@ -30,16 +36,47 @@ export function SetupScreen() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = loadSetupState(window.localStorage);
-      setFormState(saved);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unable to load setup state";
-      setErrorMessage(message);
-    }
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const saved = loadSetupState(window.localStorage);
+        if (isMounted) {
+          setFormState(saved);
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to load setup state";
+        if (isMounted) {
+          setErrorMessage(message);
+        }
+      }
+
+      try {
+        const userId = loadSupabaseUserId(window.localStorage);
+        const client = getSupabaseClient();
+        const remote = await fetchSetupState(client, userId);
+        if (isMounted) {
+          setFormState(remote);
+          setStatusMessage("Loaded setup from Supabase.");
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to load setup from Supabase";
+        if (isMounted) {
+          setErrorMessage(message);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleChange =
@@ -57,6 +94,19 @@ export function SetupScreen() {
     try {
       saveSetupState(window.localStorage, formState);
       setStatusMessage("Setup saved to local storage.");
+      const userId = loadSupabaseUserId(window.localStorage);
+      const client = getSupabaseClient();
+      void upsertSetupState(client, userId, formState)
+        .then(() => {
+          setStatusMessage("Setup saved to Supabase.");
+        })
+        .catch((error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unable to save setup to Supabase";
+          setErrorMessage(message);
+        });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to save setup state";

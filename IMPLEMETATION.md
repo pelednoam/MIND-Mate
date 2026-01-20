@@ -167,7 +167,8 @@ All repositories are tested with fake Supabase clients.
 ## 5. UI Components / Screens
 
 ### Setup & Home
-- `src/components/SetupScreen.tsx` with local storage persistence.
+- `src/components/SetupScreen.tsx` loads setup from local storage and Supabase.
+- Saves locally and upserts to Supabase when a stored user ID is available.
 - `src/components/AppHome.tsx` and `src/components/AppHeader.tsx`.
 - `src/app/setup/page.tsx` and `src/app/page.tsx` (home hub).
 
