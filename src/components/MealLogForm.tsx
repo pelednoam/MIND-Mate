@@ -11,6 +11,8 @@ import {
 } from "../lib/mealLogStorage";
 import { loadWeeklyLog, saveWeeklyLog } from "../lib/weeklyScoreStorage";
 import { applyMealLogEntry } from "../lib/mealLogUpdater";
+import { buildMealWarningDecisions } from "../lib/mealLogWarnings";
+import type { WarningRepairDecision } from "../lib/warningRepair";
 
 type MealDraft = {
   mealType: MealType;
@@ -44,6 +46,7 @@ export function MealLogForm() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [logs, setLogs] = useState<MealLogView[]>([]);
+  const [warnings, setWarnings] = useState<WarningRepairDecision[]>([]);
 
   useEffect(() => {
     try {
@@ -70,6 +73,7 @@ export function MealLogForm() {
     event.preventDefault();
     setError("");
     setStatus("");
+    setWarnings([]);
 
     try {
       const entry = createMealLogEntry({
@@ -86,6 +90,7 @@ export function MealLogForm() {
       const weeklyLog = loadWeeklyLog(window.localStorage);
       const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
       saveWeeklyLog(window.localStorage, updatedWeeklyLog);
+      setWarnings(buildMealWarningDecisions(updatedWeeklyLog, entry.limitFoods));
 
       let updated = appendMealLog(window.localStorage, entry);
       if (updated.length === 0) {
@@ -109,6 +114,9 @@ export function MealLogForm() {
           const weeklyLog = loadWeeklyLog(window.localStorage);
           const updatedWeeklyLog = applyMealLogEntry(weeklyLog, entry);
           saveWeeklyLog(window.localStorage, updatedWeeklyLog);
+          setWarnings(
+            buildMealWarningDecisions(updatedWeeklyLog, entry.limitFoods)
+          );
           const updated = appendMealLog(window.localStorage, entry);
           const updatedLogs = updated.map((item) => ({
             id: item.id,
@@ -279,6 +287,18 @@ export function MealLogForm() {
 
       {status ? <p className="mt-4 text-sm text-emerald-600">{status}</p> : null}
       {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
+      {warnings.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Warning & Repair</p>
+          <ul className="mt-2 space-y-2 text-sm text-amber-900">
+            {warnings.map((warning) => (
+              <li key={warning.limitFood}>
+                {warning.warning} {warning.repair}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {logs.length > 0 ? (
         <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
