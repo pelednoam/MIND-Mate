@@ -179,6 +179,7 @@ All repositories are tested with fake Supabase clients.
 
 ### Smart Coach
 - `src/components/SmartCoachChat.tsx` builds context, hits API, stores chat history.
+- Pulls chat history from Supabase and upserts after each exchange.
 - Shows prompt preview + smart suggestions.
 - `src/app/chat/page.tsx`.
 
