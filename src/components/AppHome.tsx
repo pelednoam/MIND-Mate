@@ -35,6 +35,11 @@ const HOME_SECTIONS = [
     title: "Meal Logging",
     description: "Record meals and enforce sensitivities.",
     href: "/log"
+  },
+  {
+    title: "Warning & Repair",
+    description: "Preview warning triggers and repair guidance.",
+    href: "/repairs"
   }
 ] as const;
 
