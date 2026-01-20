@@ -9,4 +9,9 @@ describe("WeeklyScoreDashboard", () => {
     expect(markup).toContain("Weekly Dashboard");
     expect(markup).toContain("Initialize weekly log");
   });
+
+  it("mentions the espresso tracker in the placeholder", () => {
+    const markup = renderToString(<WeeklyScoreDashboard />);
+    expect(markup).toContain("Loading weekly score");
+  });
 });

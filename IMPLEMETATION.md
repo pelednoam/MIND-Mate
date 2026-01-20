@@ -186,7 +186,8 @@ All repositories are tested with fake Supabase clients.
 - `src/components/WeeklyScoreEditor.tsx` edits weekly log, can recalc from meal logs.
 - Loads weekly log from Supabase when a stored user ID exists and upserts on save.
 - `src/components/WeeklyScoreDashboard.tsx` reads weekly log + espresso tracker.
-- Pulls weekly log from Supabase to refresh the dashboard.
+- Pulls weekly log and espresso tracker from Supabase to refresh the dashboard.
+- Espresso actions upsert the tracker state to Supabase.
 - `src/components/ProgressDashboard.tsx` renders rings/bars.
 - `src/app/dashboard/page.tsx` and `src/app/scores/page.tsx`.
 
