@@ -9,4 +9,9 @@ describe("WeeklyScoreEditor", () => {
     expect(markup).toContain("Weekly Score");
     expect(markup).toContain("Save weekly log");
   });
+
+  it("shows recalculation controls", () => {
+    const markup = renderToString(<WeeklyScoreEditor />);
+    expect(markup).toContain("Recalculate from meal logs");
+  });
 });

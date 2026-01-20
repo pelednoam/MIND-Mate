@@ -15,6 +15,9 @@ import {
   saveEspressoState,
   type EspressoState
 } from "../lib/espressoStorage";
+import { getSupabaseClient } from "../lib/persistence/supabaseClient";
+import { fetchWeeklyLog } from "../lib/persistence/weeklyLogRepository";
+import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
 
 export function WeeklyScoreDashboard() {
   const [model, setModel] = useState<ReturnType<
@@ -28,21 +31,56 @@ export function WeeklyScoreDashboard() {
   const [espressoError, setEspressoError] = useState("");
 
   useEffect(() => {
-    try {
-      const log = loadWeeklyLog(window.localStorage);
-      setWeeklyLog(log);
-      const espressoState = loadEspressoState(window.localStorage);
-      setEspresso(espressoState);
-      setModel(buildModel(log, espressoState));
-    } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : "Unable to load weekly log";
-      if (message.includes("espresso")) {
-        setEspressoError(message);
-      } else {
-        setError(message);
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const log = loadWeeklyLog(window.localStorage);
+        const espressoState = loadEspressoState(window.localStorage);
+        if (isMounted) {
+          setWeeklyLog(log);
+          setEspresso(espressoState);
+          setModel(buildModel(log, espressoState));
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error ? caught.message : "Unable to load weekly log";
+        if (isMounted) {
+          if (message.includes("espresso")) {
+            setEspressoError(message);
+          } else {
+            setError(message);
+          }
+        }
       }
-    }
+
+      try {
+        const userId = loadSupabaseUserId(window.localStorage);
+        const client = getSupabaseClient();
+        const remote = await fetchWeeklyLog(client, userId);
+        const espressoState =
+          espresso ?? loadEspressoState(window.localStorage);
+        saveWeeklyLog(window.localStorage, remote);
+        if (isMounted) {
+          setWeeklyLog(remote);
+          setEspresso(espressoState);
+          setModel(buildModel(remote, espressoState));
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error
+            ? caught.message
+            : "Unable to load weekly log from Supabase";
+        if (isMounted) {
+          setError(message);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleInitialize = () => {
@@ -117,6 +155,7 @@ export function WeeklyScoreDashboard() {
   return (
     <div className="space-y-6">
       <ProgressDashboard model={model} />
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-700 shadow-sm">
         <h3 className="text-sm font-semibold uppercase text-slate-500">
           Espresso tracker

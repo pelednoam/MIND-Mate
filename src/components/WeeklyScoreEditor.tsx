@@ -14,6 +14,12 @@ import {
 import { createWeeklyLog } from "../lib/mindScore";
 import { loadMealLogs } from "../lib/mealLogStorage";
 import { rebuildWeeklyLogFromMeals } from "../lib/weeklyLogReconciler";
+import { getSupabaseClient } from "../lib/persistence/supabaseClient";
+import {
+  fetchWeeklyLog,
+  upsertWeeklyLog
+} from "../lib/persistence/weeklyLogRepository";
+import { loadSupabaseUserId } from "../lib/persistence/supabaseUserStorage";
 
 const CATEGORY_LABELS = [
   ...HEALTHY_CATEGORIES,
@@ -26,15 +32,46 @@ export function WeeklyScoreEditor() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = loadWeeklyLog(window.localStorage);
-      setEntries(saved);
-      setStatus("Loaded saved weekly log.");
-    } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : "Unable to load weekly log";
-      setError(message);
-    }
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const saved = loadWeeklyLog(window.localStorage);
+        if (isMounted) {
+          setEntries(saved);
+          setStatus("Loaded saved weekly log.");
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error ? caught.message : "Unable to load weekly log";
+        if (isMounted) {
+          setError(message);
+        }
+      }
+
+      try {
+        const userId = loadSupabaseUserId(window.localStorage);
+        const client = getSupabaseClient();
+        const remote = await fetchWeeklyLog(client, userId);
+        if (isMounted) {
+          setEntries(remote);
+          setStatus("Loaded weekly log from Supabase.");
+        }
+      } catch (caught) {
+        const message =
+          caught instanceof Error
+            ? caught.message
+            : "Unable to load weekly log from Supabase";
+        if (isMounted) {
+          setError(message);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleChange = (categoryId: WeeklyEntry["categoryId"], value: string) => {
@@ -58,6 +95,19 @@ export function WeeklyScoreEditor() {
       const validated = createWeeklyLog([...entries]);
       saveWeeklyLog(window.localStorage, validated);
       setStatus("Weekly log saved.");
+      const userId = loadSupabaseUserId(window.localStorage);
+      const client = getSupabaseClient();
+      void upsertWeeklyLog(client, userId, validated)
+        .then(() => {
+          setStatus("Weekly log saved to Supabase.");
+        })
+        .catch((caught) => {
+          const message =
+            caught instanceof Error
+              ? caught.message
+              : "Unable to save weekly log to Supabase";
+          setError(message);
+        });
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "Unable to save weekly log";
@@ -80,6 +130,19 @@ export function WeeklyScoreEditor() {
       saveWeeklyLog(window.localStorage, rebuilt);
       setEntries(rebuilt);
       setStatus("Weekly log recalculated from meal logs.");
+      const userId = loadSupabaseUserId(window.localStorage);
+      const client = getSupabaseClient();
+      void upsertWeeklyLog(client, userId, rebuilt)
+        .then(() => {
+          setStatus("Weekly log recalculated and saved to Supabase.");
+        })
+        .catch((caught) => {
+          const message =
+            caught instanceof Error
+              ? caught.message
+              : "Unable to save recalculated log to Supabase";
+          setError(message);
+        });
     } catch (caught) {
       const message =
         caught instanceof Error
