@@ -17,6 +17,10 @@ import {
   saveChatHistory,
   type ChatMessage
 } from "../lib/chatStorage";
+import {
+  buildSmartSuggestions,
+  type SmartSuggestion
+} from "../lib/smartSuggestions";
 
 export function SmartCoachChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -25,6 +29,7 @@ export function SmartCoachChat() {
   const [promptPreview, setPromptPreview] = useState<CoachPrompt | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [historyStatus, setHistoryStatus] = useState("");
+  const [suggestions, setSuggestions] = useState<SmartSuggestion[]>([]);
 
   useEffect(() => {
     try {
@@ -67,6 +72,7 @@ export function SmartCoachChat() {
 
     const prompt = buildCoachPrompt(context, draft);
     setPromptPreview(prompt);
+    setSuggestions(buildSmartSuggestions(context.weeklyGap, 3));
     setIsSending(true);
 
     try {
@@ -182,6 +188,21 @@ export function SmartCoachChat() {
           <pre className="mt-2 whitespace-pre-wrap">
             {JSON.stringify(promptPreview, null, 2)}
           </pre>
+        </div>
+      ) : null}
+      {suggestions.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+          <p className="text-xs font-semibold uppercase text-slate-500">
+            Smart suggestions
+          </p>
+          <ul className="mt-2 space-y-2">
+            {suggestions.map((item) => (
+              <li key={item.categoryId}>
+                <span className="font-semibold">{item.label}:</span>{" "}
+                {item.suggestion}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </section>
