@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { label: "Context", href: "/context" },
   { label: "Chat", href: "/chat" },
   { label: "Log", href: "/log" },
+  { label: "Notifications", href: "/notifications" },
   { label: "Sync", href: "/sync" }
 ] as const;
 

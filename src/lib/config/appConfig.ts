@@ -16,6 +16,14 @@ export type AppConfig = {
     projectId: string;
     clientEmail: string;
     privateKey: string;
+    web: {
+      apiKey: string;
+      authDomain: string;
+      projectId: string;
+      appId: string;
+      messagingSenderId: string;
+      vapidKey: string;
+    };
   };
 };
 
@@ -59,7 +67,18 @@ export function buildAppConfig(input: unknown): AppConfig {
     fcm: {
       projectId: requireString(fcm.projectId, "fcm.projectId"),
       clientEmail: requireString(fcm.clientEmail, "fcm.clientEmail"),
-      privateKey: requireString(fcm.privateKey, "fcm.privateKey")
+      privateKey: requireString(fcm.privateKey, "fcm.privateKey"),
+      web: {
+        apiKey: requireString(fcm.web?.apiKey, "fcm.web.apiKey"),
+        authDomain: requireString(fcm.web?.authDomain, "fcm.web.authDomain"),
+        projectId: requireString(fcm.web?.projectId, "fcm.web.projectId"),
+        appId: requireString(fcm.web?.appId, "fcm.web.appId"),
+        messagingSenderId: requireString(
+          fcm.web?.messagingSenderId,
+          "fcm.web.messagingSenderId"
+        ),
+        vapidKey: requireString(fcm.web?.vapidKey, "fcm.web.vapidKey")
+      }
     }
   };
 }

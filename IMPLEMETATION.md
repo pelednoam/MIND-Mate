@@ -201,6 +201,11 @@ addition. Runtime configuration now lives in `config/mindmate.yaml`.
 
 ### `config/mindmate.yaml`
 - Single source of truth for Supabase, LLM, and FCM configuration.
+- Includes the web push config needed for client-side FCM.
+
+### `src/lib/config/appConfig.ts`
+- Loads and validates the YAML configuration into typed runtime config.
+- Enforces required fields to avoid silent defaults.
 
 ---
 
@@ -234,6 +239,13 @@ All repositories are tested with fake Supabase clients.
 ### `src/app/api/cron/nudges/[time]/route.ts`
 - Cron entry point for scheduled nudges (morning, pre-lunch, afternoon, evening).
 - Pulls user data from Supabase, builds nudges, and sends via FCM.
+
+### `src/app/api/notifications/config/route.ts`
+- Serves the Firebase web config for the client SDK.
+
+### `src/app/api/notifications/sw/route.ts`
+- Serves the Firebase service worker script with inlined web config.
+- Uses `Service-Worker-Allowed` to scope to the root.
 
 ---
 
@@ -297,6 +309,13 @@ All repositories are tested with fake Supabase clients.
   Supabase.
 - `src/app/sync/page.tsx` renders the sync screen.
 
+### Notifications
+- `src/components/NotificationRegistration.tsx` requests permission, registers
+  a service worker, gets an FCM token, and stores it in Supabase.
+- `src/lib/notifications/fcmWeb.ts` handles client-side Firebase initialization
+  and token registration.
+- `src/app/notifications/page.tsx` wraps the registration UI.
+
 ---
 
 ## 9. Tests
@@ -310,4 +329,3 @@ All repositories are tested with fake Supabase clients.
 ## 10. Pending Work
 
 - Auth/user identity (secure user_id handling instead of manual entry).
-- Client-side FCM registration (service worker + token collection UI).

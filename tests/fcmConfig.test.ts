@@ -15,7 +15,15 @@ const baseConfig: AppConfig = {
   fcm: {
     projectId: "project",
     clientEmail: "client@example.com",
-    privateKey: "line1\\nline2"
+    privateKey: "line1\\nline2",
+    web: {
+      apiKey: "web-key",
+      authDomain: "example.firebaseapp.com",
+      projectId: "web-project",
+      appId: "app-id",
+      messagingSenderId: "sender",
+      vapidKey: "vapid"
+    }
   }
 };
 

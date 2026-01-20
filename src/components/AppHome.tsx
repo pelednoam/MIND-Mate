@@ -47,6 +47,11 @@ const HOME_SECTIONS = [
     href: "/repairs"
   },
   {
+    title: "Notifications",
+    description: "Enable push notifications for proactive nudges.",
+    href: "/notifications"
+  },
+  {
     title: "Supabase Sync",
     description: "Pull or push local data to Supabase.",
     href: "/sync"
