@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CoachPersonality,
   RoutineAnchors,
@@ -12,11 +12,11 @@ import { generateCoachResponse } from "../lib/coachResponder";
 import { DEFAULT_COACH_PERSONALITY } from "../lib/mindRules";
 import { loadSetupState } from "../lib/setupStorage";
 import { loadWeeklyLog } from "../lib/weeklyScoreStorage";
-
-type ChatMessage = {
-  role: "user" | "coach";
-  text: string;
-};
+import {
+  loadChatHistory,
+  saveChatHistory,
+  type ChatMessage
+} from "../lib/chatStorage";
 
 export function SmartCoachChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -24,6 +24,19 @@ export function SmartCoachChat() {
   const [error, setError] = useState("");
   const [promptPreview, setPromptPreview] = useState<CoachPrompt | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [historyStatus, setHistoryStatus] = useState("");
+
+  useEffect(() => {
+    try {
+      const history = loadChatHistory(window.localStorage);
+      setMessages(history);
+      setHistoryStatus("Loaded chat history.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : "Unable to load chat history";
+      setHistoryStatus(message);
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,6 +88,15 @@ export function SmartCoachChat() {
         { role: "user", text: draft },
         { role: "coach", text: data.reply }
       ];
+      try {
+        saveChatHistory(window.localStorage, nextMessages);
+      } catch (historyError) {
+        const message =
+          historyError instanceof Error
+            ? historyError.message
+            : "Unable to save chat history";
+        setError(message);
+      }
       setMessages(nextMessages);
       setDraft("");
     } catch (caught) {
@@ -84,6 +106,15 @@ export function SmartCoachChat() {
         { role: "user", text: draft },
         { role: "coach", text: fallback }
       ];
+      try {
+        saveChatHistory(window.localStorage, nextMessages);
+      } catch (historyError) {
+        const message =
+          historyError instanceof Error
+            ? historyError.message
+            : "Unable to save chat history";
+        setError(message);
+      }
       setMessages(nextMessages);
       setError("Coach API unavailable, using local response.");
     } finally {
@@ -139,6 +170,9 @@ export function SmartCoachChat() {
       </form>
 
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
+      {historyStatus ? (
+        <p className="mt-2 text-xs text-slate-500">{historyStatus}</p>
+      ) : null}
 
       {promptPreview ? (
         <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700">
