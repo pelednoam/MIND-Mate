@@ -12,6 +12,8 @@ import {
   saveWeeklyLog
 } from "../lib/weeklyScoreStorage";
 import { createWeeklyLog } from "../lib/mindScore";
+import { loadMealLogs } from "../lib/mealLogStorage";
+import { rebuildWeeklyLogFromMeals } from "../lib/weeklyLogReconciler";
 
 const CATEGORY_LABELS = [
   ...HEALTHY_CATEGORIES,
@@ -69,6 +71,24 @@ export function WeeklyScoreEditor() {
     setError("");
   };
 
+  const handleRecalculate = () => {
+    setStatus("");
+    setError("");
+    try {
+      const meals = loadMealLogs(window.localStorage);
+      const rebuilt = rebuildWeeklyLogFromMeals(meals);
+      saveWeeklyLog(window.localStorage, rebuilt);
+      setEntries(rebuilt);
+      setStatus("Weekly log recalculated from meal logs.");
+    } catch (caught) {
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : "Unable to recalculate weekly log";
+      setError(message);
+    }
+  };
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-semibold text-slate-900">Weekly Score</h2>
@@ -100,6 +120,13 @@ export function WeeklyScoreEditor() {
           onClick={handleSave}
         >
           Save weekly log
+        </button>
+        <button
+          type="button"
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+          onClick={handleRecalculate}
+        >
+          Recalculate from meal logs
         </button>
         <button
           type="button"
