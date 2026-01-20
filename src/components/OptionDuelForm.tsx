@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { evaluateLunchOptions } from "../lib/optionDuel";
+import { evaluateLunchOptions, type LunchOption } from "../lib/optionDuel";
 import { HEALTHY_CATEGORIES, type HealthyCategoryId } from "../lib/mindScore";
 import { WARNING_REPAIR_ENGINE, type LimitFood } from "../lib/mindRules";
-import type { LunchOption, OptionDuelDecision } from "../lib/optionDuel";
+import type { OptionDuelDecision } from "../lib/optionDuel";
+import { applyMealSelection } from "../lib/weeklyLogUpdater";
+import { loadWeeklyLog, saveWeeklyLog } from "../lib/weeklyScoreStorage";
 
 type OptionInput = {
   id: string;
@@ -51,6 +53,10 @@ export function OptionDuelForm() {
   });
   const [decision, setDecision] = useState<OptionDuelDecision | null>(null);
   const [error, setError] = useState("");
+  const [selectedOptionId, setSelectedOptionId] = useState("");
+  const [evaluatedOptions, setEvaluatedOptions] = useState<LunchOption[]>([]);
+  const [applyStatus, setApplyStatus] = useState("");
+  const [applyError, setApplyError] = useState("");
 
   const handleOptionLabelChange = (index: number, value: string) => {
     setOptions((prev) => {
@@ -117,6 +123,8 @@ export function OptionDuelForm() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setApplyStatus("");
+    setApplyError("");
 
     const activeOptions = includeThird
       ? options
@@ -126,11 +134,45 @@ export function OptionDuelForm() {
     const payload = activeOptions.map((option) => mapToLunchOption(option));
       const result = evaluateLunchOptions(payload, currentLimitServings);
       setDecision(result);
+      setEvaluatedOptions(payload);
+      setSelectedOptionId(result.winnerId);
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "Unexpected error";
       setDecision(null);
+      setEvaluatedOptions([]);
+      setSelectedOptionId("");
       setError(message);
+    }
+  };
+
+  const handleApplySelection = () => {
+    setApplyStatus("");
+    setApplyError("");
+    if (!decision) {
+      setApplyError("Run an option duel before applying.");
+      return;
+    }
+    const selected = evaluatedOptions.find(
+      (option) => option.id === selectedOptionId
+    );
+    if (!selected) {
+      setApplyError("Selected option not found.");
+      return;
+    }
+
+    try {
+      const log = loadWeeklyLog(window.localStorage);
+      const updated = applyMealSelection(log, {
+        healthyCategories: selected.healthyCategories,
+        limitFoods: selected.limitFoods
+      });
+      saveWeeklyLog(window.localStorage, updated);
+      setApplyStatus(`Applied ${selected.label} to weekly log.`);
+    } catch (caught) {
+      const message =
+        caught instanceof Error ? caught.message : "Unable to update weekly log";
+      setApplyError(message);
     }
   };
 
@@ -297,6 +339,62 @@ export function OptionDuelForm() {
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {decision ? (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
+          <label className="text-xs font-semibold uppercase text-slate-500">
+            Apply selection to weekly log
+            <select
+              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+              value={selectedOptionId}
+              onChange={(event) => setSelectedOptionId(event.target.value)}
+            >
+              {decision.rankings.map((ranking) => (
+                <option key={ranking.id} value={ranking.id}>
+                  {ranking.label || ranking.id}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            onClick={handleApplySelection}
+          >
+            Apply selection
+          </button>
+          {applyStatus ? (
+            <p className="mt-2 text-sm text-emerald-600">{applyStatus}</p>
+          ) : null}
+          {applyError ? (
+            <p className="mt-2 text-sm text-rose-600">{applyError}</p>
+          ) : null}
+
+          {selectedOptionId ? (
+            <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+              <p className="font-semibold text-slate-700">
+                Warning & Repair guidance
+              </p>
+              {decision.rankings
+                .find((ranking) => ranking.id === selectedOptionId)
+                ?.warnings.filter((warning) => warning.shouldWarn).length ? (
+                <ul className="mt-2 list-disc pl-4">
+                  {decision.rankings
+                    .find((ranking) => ranking.id === selectedOptionId)
+                    ?.warnings.filter((warning) => warning.shouldWarn)
+                    .map((warning) => (
+                      <li key={warning.limitFood}>
+                        {warning.warning} {warning.repair}
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="mt-2">No limit warnings for this selection.</p>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>
