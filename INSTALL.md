@@ -147,6 +147,10 @@ certificate** key pair (not labeled “VAPID”). Click the **⋮** menu on the 
 pair row and choose **View key pair** or **Copy key**. The **public key** shown
 there is the VAPID key.
 
+**New UI shortcut:** The **Key pair** value shown in the table row is already
+the public key. You can copy that and paste it directly into
+`fcm.web.vapidKey`.
+
 **How to test:**
 ```
 npm test -- tests/fcmWebConfigIntegration.test.ts
