@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "validate:config": "node scripts/validate-config.js",
+    "verify:config": "npm run validate:config && npm test -- tests/supabaseConfigIntegration.test.ts tests/llmConfigIntegration.test.ts tests/fcmAdminConfigIntegration.test.ts tests/fcmWebConfigIntegration.test.ts",
     "predev": "npm run validate:config",
     "dev": "next dev",
     "build": "next build",
@@ -25,6 +26,7 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@types/react": "19.2.9",
     "autoprefixer": "10.4.19",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
