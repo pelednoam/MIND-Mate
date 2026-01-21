@@ -198,6 +198,9 @@ It also runs automatically before:
 - `npm run dev`
 - `npm run start`
 
+**Do I need to run `npm install firebase`?** No. The dependency is already in
+the project. Just run `npm install` and it will be included.
+
 ---
 
 ## 7) Test Supabase Parameters
