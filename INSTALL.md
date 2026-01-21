@@ -4,6 +4,14 @@ This guide explains every field in `config/mindmate.yaml` in plain language.
 Each step tells you what the service is, why MIND‑Mate needs it, and where to
 get the value.
 
+**Security note:** `config/mindmate.yaml` contains secrets. Keep it local and do
+not commit it. If you already committed it, remove it from git history and
+rotate the keys.
+
+To keep it out of commits:
+- Add `config/mindmate.yaml` to `.gitignore`, or
+- Run `git update-index --assume-unchanged config/mindmate.yaml`
+
 ---
 
 ## 1) Supabase (Database + Auth)
@@ -154,7 +162,24 @@ It also runs automatically before:
 
 ---
 
-## 7) Supabase Auth Redirect URL
+## 7) Test Supabase Parameters
+
+**What it does:** Confirms your Supabase URL and anon key were loaded from the
+YAML file and look valid.
+
+Run the targeted test:
+
+```
+npm test -- tests/supabaseConfigIntegration.test.ts
+```
+
+If it fails:
+- Re-check the **Project URL** and **Anon public key**.
+- Make sure `supabase.url` starts with `https://` and ends with `.supabase.co`.
+
+---
+
+## 8) Supabase Auth Redirect URL
 
 **What it is:** Supabase needs to know which URLs are allowed to complete
 magic‑link sign‑in.
