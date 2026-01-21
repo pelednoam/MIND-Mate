@@ -100,6 +100,15 @@ the server needs permission to send them.
 npm test -- tests/fcmAdminConfigIntegration.test.ts
 ```
 
+**How to verify (real send):**
+1. Complete the Firebase Web config (section 4) and enable notifications in
+   `http://localhost:3000/notifications`.
+2. Send a test nudge:
+```
+curl -s http://localhost:3000/api/cron/nudges/morning
+```
+If you receive a notification, the admin credentials are valid.
+
 ---
 
 ## 4) Firebase Web (Client‑side FCM)
@@ -131,6 +140,12 @@ the server so notifications can be targeted to that user.
 ```
 npm test -- tests/fcmWebConfigIntegration.test.ts
 ```
+
+**How to verify (real device token):**
+1. Start the app: `npm run dev`
+2. Open `http://localhost:3000/notifications`
+3. Click **Enable notifications**
+4. Confirm a token appears in the `mind_notification_tokens` table in Supabase.
 
 ---
 
@@ -196,6 +211,11 @@ npm test -- tests/supabaseConfigIntegration.test.ts
 If it fails:
 - Re-check the **Project URL** and **Anon public key**.
 - Make sure `supabase.url` starts with `https://` and ends with `.supabase.co`.
+
+**How to verify (real connection):**
+1. Start the app: `npm run dev`
+2. Open `http://localhost:3000/setup` and click **Save setup**.
+3. Check the `mind_setup` table in Supabase for a new row tied to your user.
 
 ---
 
