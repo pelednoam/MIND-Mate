@@ -213,6 +213,14 @@ It also runs automatically before:
 **Do I need to run `npm install firebase`?** No. The dependency is already in
 the project. Just run `npm install` and it will be included.
 
+**All-in-one live verification (optional):**
+```
+npm run verify:live
+```
+This script performs real checks against Supabase, the LLM provider, and FCM.
+To verify FCM, add a `fcm.testToken` value in `config/mindmate.yaml` after you
+register a device once via `/notifications`.
+
 ---
 
 ## 7) Test Supabase Parameters

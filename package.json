@@ -5,6 +5,7 @@
   "scripts": {
     "validate:config": "node scripts/validate-config.js",
     "verify:config": "npm run validate:config && npm test -- tests/supabaseConfigIntegration.test.ts tests/llmConfigIntegration.test.ts tests/fcmAdminConfigIntegration.test.ts tests/fcmWebConfigIntegration.test.ts",
+    "verify:live": "node scripts/verify-live.js",
     "predev": "npm run validate:config",
     "dev": "next dev",
     "build": "next build",
