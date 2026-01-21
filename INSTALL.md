@@ -32,6 +32,11 @@ your browser. Supabase enables sync across devices and user accounts.
    - **Project URL** → `supabase.url`
    - **Anon public key** → `supabase.anonKey`
 
+**How to test:**
+```
+npm test -- tests/supabaseConfigIntegration.test.ts
+```
+
 ---
 
 ## 2) LLM Provider (OpenAI or Gemini)
@@ -61,6 +66,16 @@ coaching.
    - `llm.model: "gemini-1.5-pro"`
    - `llm.apiKey: "<your-gemini-key>"`
 
+**How to test:**
+1. Start the app: `npm run dev`
+2. Send a quick request to the coach endpoint:
+```
+curl -s -X POST http://localhost:3000/api/coach \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":{"system":"You are a test coach.","user":"Say hello."}}'
+```
+If the reply returns JSON with a `reply` field, the LLM key is working.
+
 ---
 
 ## 3) Firebase Admin (Server‑side FCM)
@@ -84,6 +99,13 @@ the server needs permission to send them.
    - `private_key` → `fcm.privateKey`
 
 **Important:** paste `private_key` using YAML’s multi‑line format.
+
+**How to test:**
+After completing section 4 (web setup) and enabling notifications for your user,
+hit a cron endpoint to send a test nudge:
+```
+curl -s http://localhost:3000/api/cron/nudges/morning
+```
 
 ---
 
@@ -111,6 +133,13 @@ the server so notifications can be targeted to that user.
 1. Firebase Console → **Project Settings → Cloud Messaging**.
 2. Under **Web configuration**, generate a **Web Push certificate**.
 3. Copy the **VAPID key** → `fcm.web.vapidKey`.
+
+**How to test:**
+1. Start the app: `npm run dev`
+2. Open `http://localhost:3000/notifications`
+3. Click **Enable notifications**
+4. You should see a success message and a token saved in Supabase
+   (`mind_notification_tokens` table).
 
 ---
 
@@ -192,3 +221,8 @@ Steps:
 2. Add:
    - `http://localhost:3000/auth`
    - `https://<your-domain>/auth`
+
+**How to test:**
+1. Start the app: `npm run dev`
+2. Open `http://localhost:3000/auth`
+3. Send a magic link and confirm the sign‑in succeeds.
