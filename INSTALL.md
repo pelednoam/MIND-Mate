@@ -1,16 +1,24 @@
 # MIND-Mate Configuration Guide
 
-This guide walks through every field in `config/mindmate.yaml` and where to
-get the values. It also covers how to validate the configuration before
-running the app.
+This guide explains every field in `config/mindmate.yaml` in plain language.
+Each step tells you what the service is, why MIND‑Mate needs it, and where to
+get the value.
 
 ---
 
-## 1) Supabase
+## 1) Supabase (Database + Auth)
+
+**What it is:** Supabase is the cloud database and authentication system for
+MIND‑Mate. It stores your setup, meal logs, weekly scores, chat history, and
+notification tokens, and it manages user sign‑in.
+
+**Why it is needed:** Without Supabase, the app can only store data locally in
+your browser. Supabase enables sync across devices and user accounts.
 
 **Goal:** Fill `supabase.url` and `supabase.anonKey`.
 
-1. Open **Supabase Dashboard** → your project.
+**Steps:**
+1. Open **Supabase Dashboard** and select your project.
 2. Go to **Project Settings → API**.
 3. Copy:
    - **Project URL** → `supabase.url`
@@ -19,6 +27,13 @@ running the app.
 ---
 
 ## 2) LLM Provider (OpenAI or Gemini)
+
+**What it is:** The LLM provider generates the coach’s responses (the Smart
+Coach chat and meal comparisons).
+
+**Why it is needed:** MIND‑Mate uses a hybrid architecture: the logic layer
+produces rules and context, and the LLM turns that context into human‑readable
+coaching.
 
 **Goal:** Fill `llm.provider`, `llm.model`, `llm.apiKey`.
 
@@ -42,8 +57,16 @@ running the app.
 
 ## 3) Firebase Admin (Server‑side FCM)
 
+**What it is:** Firebase Cloud Messaging (FCM) sends push notifications. The
+Admin credentials let your server send messages on behalf of your Firebase
+project.
+
+**Why it is needed:** Proactive nudges are delivered as push notifications, so
+the server needs permission to send them.
+
 **Goal:** Fill `fcm.projectId`, `fcm.clientEmail`, `fcm.privateKey`.
 
+**Steps:**
 1. Open **Firebase Console** and select your project.
 2. Go to **Project Settings → Service Accounts**.
 3. Click **Generate new private key** and download the JSON file.
@@ -57,6 +80,12 @@ running the app.
 ---
 
 ## 4) Firebase Web (Client‑side FCM)
+
+**What it is:** The Firebase Web config lets the browser register itself and
+receive push notifications.
+
+**Why it is needed:** The user’s browser must get a device token and send it to
+the server so notifications can be targeted to that user.
 
 **Goal:** Fill the `fcm.web.*` section.
 
@@ -107,13 +136,19 @@ fcm:
 
 ## 6) Validate the Config
 
-Run the validator before starting the app:
+**What it does:** The validator checks that every field is filled and that no
+placeholders remain.
+
+**Why it is needed:** It prevents the app from starting with missing or fake
+credentials, which would cause confusing runtime failures.
+
+Run it manually:
 
 ```
 npm run validate:config
 ```
 
-This command is also run automatically before:
+It also runs automatically before:
 - `npm run dev`
 - `npm run start`
 
@@ -121,7 +156,13 @@ This command is also run automatically before:
 
 ## 7) Supabase Auth Redirect URL
 
-For magic‑link sign‑in:
+**What it is:** Supabase needs to know which URLs are allowed to complete
+magic‑link sign‑in.
+
+**Why it is needed:** Without this, sign‑in links will fail after the user
+clicks them.
+
+Steps:
 1. Supabase → **Auth → URL Configuration**.
 2. Add:
    - `http://localhost:3000/auth`
