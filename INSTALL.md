@@ -139,6 +139,9 @@ the server so notifications can be targeted to that user.
 2. Under **Web configuration**, generate a **Web Push certificate**.
 3. Copy the **VAPID key** → `fcm.web.vapidKey`.
 
+**Important:** The VAPID key is **not** shown in the Web SDK config block.
+It only appears on the **Cloud Messaging** page.
+
 **How to test:**
 ```
 npm test -- tests/fcmWebConfigIntegration.test.ts
