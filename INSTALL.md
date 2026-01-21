@@ -142,6 +142,11 @@ the server so notifications can be targeted to that user.
 **Important:** The VAPID key is **not** shown in the Web SDK config block.
 It only appears on the **Cloud Messaging** page.
 
+**New UI note:** In the latest Firebase UI, it is shown as a **Web Push
+certificate** key pair (not labeled “VAPID”). Click the **⋮** menu on the key
+pair row and choose **View key pair** or **Copy key**. The **public key** shown
+there is the VAPID key.
+
 **How to test:**
 ```
 npm test -- tests/fcmWebConfigIntegration.test.ts
