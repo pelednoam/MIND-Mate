@@ -94,6 +94,8 @@ the server needs permission to send them.
    - `private_key` → `fcm.privateKey`
 
 **Important:** paste `private_key` using YAML’s multi‑line format.
+If your key is on a single line with `\\n` sequences, replace it with the
+multi‑line block format shown below to avoid formatting mistakes.
 
 **How to test:**
 ```
@@ -124,7 +126,8 @@ the server so notifications can be targeted to that user.
 ### 4.1 Register a Web App
 1. Firebase Console → **Project Settings → General**.
 2. Under **Your apps**, click **Add app** → **Web**.
-3. Register the app and copy the Firebase config values:
+3. **Do NOT enable Firebase Hosting** for this step (we deploy on Next.js/Vercel).
+4. Register the app and copy the Firebase config values:
    - `apiKey` → `fcm.web.apiKey`
    - `authDomain` → `fcm.web.authDomain`
    - `projectId` → `fcm.web.projectId`
